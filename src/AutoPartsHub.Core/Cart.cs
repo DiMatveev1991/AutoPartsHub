@@ -1,13 +1,22 @@
 namespace AutoPartsHub.Core;
 
+/// <summary>
+/// Представляет пользовательскую корзину и управляет её позициями.
+/// </summary>
 public sealed class Cart
 {
     private readonly List<CartItem> _items = [];
 
+    /// <summary>
+    /// Создаёт экземпляр корзины для восстановления Entity Framework Core.
+    /// </summary>
     private Cart()
     {
     }
 
+    /// <summary>
+    /// Создаёт пустую корзину для указанного пользователя.
+    /// </summary>
     public Cart(Guid userId, DateTimeOffset now)
     {
         if (userId == Guid.Empty)
@@ -18,12 +27,24 @@ public sealed class Cart
         UpdatedAt = now;
     }
 
+    /// <summary>Получает уникальный идентификатор корзины.</summary>
     public Guid Id { get; private set; }
+
+    /// <summary>Получает идентификатор владельца корзины.</summary>
     public Guid UserId { get; private set; }
+
+    /// <summary>Получает дату и время последнего изменения корзины.</summary>
     public DateTimeOffset UpdatedAt { get; private set; }
+
+    /// <summary>Получает владельца корзины при загрузке связи из базы данных.</summary>
     public User? User { get; private set; }
+
+    /// <summary>Получает доступный только для чтения список позиций корзины.</summary>
     public IReadOnlyCollection<CartItem> Items => _items;
 
+    /// <summary>
+    /// Добавляет товар в корзину или увеличивает количество существующей позиции.
+    /// </summary>
     public void Add(Product product, int quantity, DateTimeOffset now)
     {
         if (quantity <= 0)
@@ -31,6 +52,7 @@ public sealed class Cart
         if (!product.IsActive || product.Stock < quantity)
             throw new DomainException("Товар недоступен в указанном количестве.");
 
+        // Одинаковые товары хранятся одной строкой, поэтому количество объединяется.
         var existing = _items.SingleOrDefault(item => item.ProductId == product.Id);
         var newQuantity = (existing?.Quantity ?? 0) + quantity;
         if (newQuantity > product.Stock)
@@ -44,6 +66,9 @@ public sealed class Cart
         UpdatedAt = now;
     }
 
+    /// <summary>
+    /// Изменяет количество товара с учётом доступного остатка.
+    /// </summary>
     public void ChangeQuantity(Guid productId, int quantity, int availableStock, DateTimeOffset now)
     {
         var item = _items.SingleOrDefault(value => value.ProductId == productId)
@@ -56,6 +81,9 @@ public sealed class Cart
         UpdatedAt = now;
     }
 
+    /// <summary>
+    /// Удаляет товар из корзины, если он был добавлен.
+    /// </summary>
     public void Remove(Guid productId, DateTimeOffset now)
     {
         var item = _items.SingleOrDefault(value => value.ProductId == productId);
@@ -64,6 +92,9 @@ public sealed class Cart
         UpdatedAt = now;
     }
 
+    /// <summary>
+    /// Удаляет все позиции корзины.
+    /// </summary>
     public void Clear(DateTimeOffset now)
     {
         _items.Clear();

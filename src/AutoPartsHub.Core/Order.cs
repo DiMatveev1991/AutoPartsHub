@@ -1,13 +1,22 @@
 namespace AutoPartsHub.Core;
 
+/// <summary>
+/// Представляет заказ пользователя, его состав и жизненный цикл.
+/// </summary>
 public sealed class Order
 {
     private readonly List<OrderItem> _items = [];
 
+    /// <summary>
+    /// Создаёт экземпляр заказа для восстановления Entity Framework Core.
+    /// </summary>
     private Order()
     {
     }
 
+    /// <summary>
+    /// Инициализирует заказ проверенными контактными данными.
+    /// </summary>
     private Order(
         Guid userId,
         string orderNumber,
@@ -33,21 +42,51 @@ public sealed class Order
         UpdatedAt = now;
     }
 
+    /// <summary>Получает уникальный идентификатор заказа.</summary>
     public Guid Id { get; private set; }
+
+    /// <summary>Получает идентификатор владельца заказа.</summary>
     public Guid UserId { get; private set; }
+
+    /// <summary>Получает человекочитаемый номер заказа.</summary>
     public string OrderNumber { get; private set; } = string.Empty;
+
+    /// <summary>Получает текущий статус заказа.</summary>
     public OrderStatus Status { get; private set; }
+
+    /// <summary>Получает имя получателя заказа.</summary>
     public string ContactName { get; private set; } = string.Empty;
+
+    /// <summary>Получает контактный телефон получателя.</summary>
     public string Phone { get; private set; } = string.Empty;
+
+    /// <summary>Получает адрес доставки.</summary>
     public string DeliveryAddress { get; private set; } = string.Empty;
+
+    /// <summary>Получает выбранный способ доставки.</summary>
     public DeliveryMethod DeliveryMethod { get; private set; }
+
+    /// <summary>Получает выбранный способ оплаты.</summary>
     public PaymentMethod PaymentMethod { get; private set; }
+
+    /// <summary>Получает итоговую стоимость заказа.</summary>
     public decimal Total { get; private set; }
+
+    /// <summary>Получает дату и время создания заказа.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
+
+    /// <summary>Получает дату и время последнего изменения заказа.</summary>
     public DateTimeOffset UpdatedAt { get; private set; }
+
+    /// <summary>Получает владельца заказа при загрузке связи из базы данных.</summary>
     public User? User { get; private set; }
+
+    /// <summary>Получает доступный только для чтения состав заказа.</summary>
     public IReadOnlyCollection<OrderItem> Items => _items;
 
+    /// <summary>
+    /// Создаёт заказ из позиций корзины и резервирует товарные остатки.
+    /// </summary>
     public static Order Create(
         Guid userId,
         string orderNumber,
@@ -74,6 +113,8 @@ public sealed class Order
 
         foreach (var (product, quantity) in lines)
         {
+            // В заказ копируются название и цена: последующие изменения каталога
+            // не должны менять уже оформленный заказ.
             product.Reserve(quantity);
             order._items.Add(new OrderItem(
                 order.Id,
@@ -88,6 +129,9 @@ public sealed class Order
         return order;
     }
 
+    /// <summary>
+    /// Переводит заказ в следующий разрешённый статус.
+    /// </summary>
     public void ChangeStatus(OrderStatus status, DateTimeOffset now)
     {
         if (!CanMove(Status, status))
@@ -97,6 +141,9 @@ public sealed class Order
         UpdatedAt = now;
     }
 
+    /// <summary>
+    /// Проверяет допустимость перехода между статусами заказа.
+    /// </summary>
     private static bool CanMove(OrderStatus current, OrderStatus next) =>
         current switch
         {
@@ -107,6 +154,9 @@ public sealed class Order
             _ => false
         };
 
+    /// <summary>
+    /// Проверяет обязательную строку, удаляет крайние пробелы и контролирует длину.
+    /// </summary>
     private static string Required(string value, string name, int maxLength)
     {
         var result = value?.Trim();

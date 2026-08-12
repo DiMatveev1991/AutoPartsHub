@@ -1,11 +1,20 @@
 namespace AutoPartsHub.Core;
 
+/// <summary>
+/// Представляет пользователя AutoParts Hub, связанного с учётной записью Telegram.
+/// </summary>
 public sealed class User
 {
+    /// <summary>
+    /// Создаёт экземпляр пользователя для восстановления Entity Framework Core.
+    /// </summary>
     private User()
     {
     }
 
+    /// <summary>
+    /// Создаёт нового пользователя и проверяет обязательные данные.
+    /// </summary>
     public User(
         long telegramChatId,
         string displayName,
@@ -22,14 +31,29 @@ public sealed class User
         CreatedAt = createdAt;
     }
 
+    /// <summary>Получает уникальный идентификатор пользователя.</summary>
     public Guid Id { get; private set; }
+
+    /// <summary>Получает идентификатор чата пользователя в Telegram.</summary>
     public long TelegramChatId { get; private set; }
+
+    /// <summary>Получает отображаемое имя пользователя.</summary>
     public string DisplayName { get; private set; } = string.Empty;
+
+    /// <summary>Получает роль пользователя.</summary>
     public UserRole Role { get; private set; }
+
+    /// <summary>Получает дату и время регистрации пользователя.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
+    /// <summary>
+    /// Назначает пользователю роль администратора.
+    /// </summary>
     public void PromoteToAdmin() => Role = UserRole.Admin;
 
+    /// <summary>
+    /// Проверяет обязательную строку, удаляет крайние пробелы и контролирует длину.
+    /// </summary>
     private static string Required(string value, string name, int maxLength)
     {
         var result = value?.Trim();
