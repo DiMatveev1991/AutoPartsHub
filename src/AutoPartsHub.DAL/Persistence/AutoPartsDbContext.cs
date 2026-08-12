@@ -3,21 +3,49 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AutoPartsHub.DAL.Persistence;
 
+/// <summary>
+/// Представляет сеанс Entity Framework Core для базы данных AutoParts Hub.
+/// </summary>
+/// <param name="options">Настройки подключения и провайдера базы данных.</param>
 public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> options)
     : DbContext(options)
 {
+    /// <summary>Получает набор пользователей.</summary>
     public DbSet<User> Users => Set<User>();
+
+    /// <summary>Получает набор категорий.</summary>
     public DbSet<Category> Categories => Set<Category>();
+
+    /// <summary>Получает набор товаров.</summary>
     public DbSet<Product> Products => Set<Product>();
+
+    /// <summary>Получает набор правил совместимости товаров.</summary>
     public DbSet<ProductCompatibility> ProductCompatibilities => Set<ProductCompatibility>();
+
+    /// <summary>Получает набор автомобилей пользователей.</summary>
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+
+    /// <summary>Получает набор корзин.</summary>
     public DbSet<Cart> Carts => Set<Cart>();
+
+    /// <summary>Получает набор позиций корзин.</summary>
     public DbSet<CartItem> CartItems => Set<CartItem>();
+
+    /// <summary>Получает набор заказов.</summary>
     public DbSet<Order> Orders => Set<Order>();
+
+    /// <summary>Получает набор позиций заказов.</summary>
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+
+    /// <summary>Получает набор товарных подписок.</summary>
     public DbSet<ProductSubscription> ProductSubscriptions => Set<ProductSubscription>();
+
+    /// <summary>Получает набор уведомлений.</summary>
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    /// <summary>
+    /// Настраивает таблицы, ограничения, индексы и связи доменной модели.
+    /// </summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ConfigureUsers(modelBuilder);
@@ -26,6 +54,9 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
         ConfigureNotifications(modelBuilder);
     }
 
+    /// <summary>
+    /// Настраивает пользователей и автомобили.
+    /// </summary>
     private static void ConfigureUsers(ModelBuilder builder)
     {
         builder.Entity<User>(entity =>
@@ -54,6 +85,9 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
         });
     }
 
+    /// <summary>
+    /// Настраивает категории, товары и совместимость.
+    /// </summary>
     private static void ConfigureCatalog(ModelBuilder builder)
     {
         builder.Entity<Category>(entity =>
@@ -100,6 +134,9 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
         });
     }
 
+    /// <summary>
+    /// Настраивает корзины, заказы и их позиции.
+    /// </summary>
     private static void ConfigureCommerce(ModelBuilder builder)
     {
         builder.Entity<Cart>(entity =>
@@ -167,6 +204,9 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
         });
     }
 
+    /// <summary>
+    /// Настраивает подписки и уведомления.
+    /// </summary>
     private static void ConfigureNotifications(ModelBuilder builder)
     {
         builder.Entity<ProductSubscription>(entity =>

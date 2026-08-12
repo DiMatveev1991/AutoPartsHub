@@ -6,8 +6,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AutoPartsHub.DAL;
 
+/// <summary>
+/// Регистрирует зависимости слоя доступа к данным.
+/// </summary>
 public static class DependencyInjection
 {
+    /// <summary>
+    /// Подключает PostgreSQL, репозиторий и инфраструктурные сервисы AutoParts Hub.
+    /// </summary>
     public static IServiceCollection AddAutoPartsHubDal(
         this IServiceCollection services,
         IConfiguration configuration)
