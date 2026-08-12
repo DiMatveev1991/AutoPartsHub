@@ -1,0 +1,65 @@
+using AutoPartsHub.BLL.Contracts;
+using AutoPartsHub.Core;
+
+namespace AutoPartsHub.BLL;
+
+public sealed class CartService(IAutoPartsRepository repository, IClock clock)
+{
+    public async Task<CartDto> GetAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var cart = await GetOrCreateAsync(userId, cancellationToken);
+        return cart.ToDto();
+    }
+
+    public async Task<CartDto> AddAsync(
+        Guid userId,
+        AddCartItemRequest request,
+        CancellationToken cancellationToken)
+    {
+        var product = await repository.FindProductAsync(request.ProductId, cancellationToken)
+            ?? throw new NotFoundException("Товар не найден.");
+        var cart = await GetOrCreateAsync(userId, cancellationToken);
+        cart.Add(product, request.Quantity, clock.UtcNow);
+        await repository.SaveChangesAsync(cancellationToken);
+        return cart.ToDto();
+    }
+
+    public async Task<CartDto> ChangeQuantityAsync(
+        Guid userId,
+        Guid productId,
+        ChangeCartItemRequest request,
+        CancellationToken cancellationToken)
+    {
+        var cart = await repository.FindCartAsync(userId, cancellationToken)
+            ?? throw new NotFoundException("Корзина не найдена.");
+        var product = await repository.FindProductAsync(productId, cancellationToken)
+            ?? throw new NotFoundException("Товар не найден.");
+
+        cart.ChangeQuantity(productId, request.Quantity, product.Stock, clock.UtcNow);
+        await repository.SaveChangesAsync(cancellationToken);
+        return cart.ToDto();
+    }
+
+    public async Task<CartDto> RemoveAsync(
+        Guid userId,
+        Guid productId,
+        CancellationToken cancellationToken)
+    {
+        var cart = await repository.FindCartAsync(userId, cancellationToken)
+            ?? throw new NotFoundException("Корзина не найдена.");
+        cart.Remove(productId, clock.UtcNow);
+        await repository.SaveChangesAsync(cancellationToken);
+        return cart.ToDto();
+    }
+
+    private async Task<Cart> GetOrCreateAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var cart = await repository.FindCartAsync(userId, cancellationToken);
+        if (cart is not null)
+            return cart;
+
+        cart = new Cart(userId, clock.UtcNow);
+        await repository.AddCartAsync(cart, cancellationToken);
+        return cart;
+    }
+}
