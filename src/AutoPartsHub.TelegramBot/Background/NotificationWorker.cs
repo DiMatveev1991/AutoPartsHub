@@ -5,10 +5,18 @@ using Microsoft.Extensions.Logging;
 
 namespace AutoPartsHub.TelegramBot.Background;
 
+/// <summary>
+/// Периодически создаёт и отправляет уведомления по товарным подпискам.
+/// </summary>
+/// <param name="scopeFactory">Фабрика областей зависимостей фоновой обработки.</param>
+/// <param name="logger">Журнал приложения.</param>
 public sealed class NotificationWorker(
     IServiceScopeFactory scopeFactory,
     ILogger<NotificationWorker> logger) : BackgroundService
 {
+    /// <summary>
+    /// Запускает обработку сразу после старта и повторяет её каждую минуту.
+    /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
@@ -30,6 +38,9 @@ public sealed class NotificationWorker(
         while (await timer.WaitForNextTickAsync(stoppingToken));
     }
 
+    /// <summary>
+    /// Выполняет один цикл подготовки и отправки уведомлений.
+    /// </summary>
     private async Task ProcessAsync(CancellationToken cancellationToken)
     {
         await using var scope = scopeFactory.CreateAsyncScope();

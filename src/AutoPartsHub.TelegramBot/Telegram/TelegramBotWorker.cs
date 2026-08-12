@@ -7,11 +7,20 @@ using Telegram.Bot.Types;
 
 namespace AutoPartsHub.TelegramBot.Telegram;
 
+/// <summary>
+/// Запускает получение обновлений Telegram и регистрирует меню команд бота.
+/// </summary>
+/// <param name="options">Настройки Telegram.</param>
+/// <param name="handler">Обработчик входящих обновлений.</param>
+/// <param name="logger">Журнал приложения.</param>
 public sealed class TelegramBotWorker(
     IOptions<TelegramOptions> options,
     TelegramUpdateHandler handler,
     ILogger<TelegramBotWorker> logger) : BackgroundService
 {
+    /// <summary>
+    /// Запускает long polling и ожидает завершения приложения.
+    /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!options.Value.EnablePolling || string.IsNullOrWhiteSpace(options.Value.BotToken))
@@ -32,6 +41,7 @@ public sealed class TelegramBotWorker(
             ],
             cancellationToken: stoppingToken);
 
+        // StartReceiving запускает внутренний цикл; жизненный цикл worker удерживается Task.Delay ниже.
         client.StartReceiving(
             handler,
             new ReceiverOptions { DropPendingUpdates = true },

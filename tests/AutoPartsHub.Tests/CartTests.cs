@@ -2,11 +2,15 @@ using AutoPartsHub.Core;
 
 namespace AutoPartsHub.Tests;
 
+/// <summary>
+/// Проверяет добавление, объединение и удаление позиций корзины.
+/// </summary>
 public sealed class CartTests
 {
     private static readonly DateTimeOffset Now =
         new(2026, 8, 12, 12, 0, 0, TimeSpan.Zero);
 
+    /// <summary>Проверяет добавление новой позиции.</summary>
     [Fact]
     public void Add_AddsNewLine()
     {
@@ -20,6 +24,7 @@ public sealed class CartTests
         Assert.Equal(2, item.Quantity);
     }
 
+    /// <summary>Проверяет объединение одинаковых товаров.</summary>
     [Fact]
     public void Add_MergesSameProduct()
     {
@@ -32,6 +37,7 @@ public sealed class CartTests
         Assert.Equal(3, Assert.Single(cart.Items).Quantity);
     }
 
+    /// <summary>Проверяет неизменность корзины при превышении остатка.</summary>
     [Fact]
     public void Add_DoesNotMutateCartWhenStockExceeded()
     {
@@ -43,6 +49,7 @@ public sealed class CartTests
         Assert.Equal(1, Assert.Single(cart.Items).Quantity);
     }
 
+    /// <summary>Проверяет удаление товарной позиции.</summary>
     [Fact]
     public void Remove_DeletesLine()
     {

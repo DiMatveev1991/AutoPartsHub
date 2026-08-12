@@ -7,8 +7,14 @@ using Microsoft.Extensions.Logging;
 
 namespace AutoPartsHub.TelegramBot;
 
+/// <summary>
+/// Применяет миграции и добавляет демонстрационные данные в пустую базу.
+/// </summary>
 public static class DbSeeder
 {
+    /// <summary>
+    /// Подготавливает схему базы данных и начальный каталог.
+    /// </summary>
     public static async Task InitializeAsync(
         IServiceProvider services,
         IConfiguration configuration,
@@ -21,6 +27,7 @@ public static class DbSeeder
         if (configuration.GetValue("Database:ApplyMigrationsOnStartup", true))
             await db.Database.MigrateAsync(cancellationToken);
 
+        // Наличие любого товара означает, что пользователь уже наполнял каталог.
         if (await db.Products.AnyAsync(cancellationToken))
             return;
 

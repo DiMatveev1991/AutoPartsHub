@@ -2,11 +2,15 @@ using AutoPartsHub.Core;
 
 namespace AutoPartsHub.Tests;
 
+/// <summary>
+/// Проверяет оформление заказа, снимок цены и переходы статусов.
+/// </summary>
 public sealed class OrderTests
 {
     private static readonly DateTimeOffset Now =
         new(2026, 8, 12, 12, 0, 0, TimeSpan.Zero);
 
+    /// <summary>Проверяет резервирование остатка и сохранение цены в заказе.</summary>
     [Fact]
     public void Create_SnapshotsPriceAndReservesStock()
     {
@@ -29,6 +33,7 @@ public sealed class OrderTests
         Assert.Equal(OrderStatus.Processing, order.Status);
     }
 
+    /// <summary>Проверяет запрет оформления пустого заказа.</summary>
     [Fact]
     public void Create_RejectsEmptyOrder()
     {
@@ -44,6 +49,7 @@ public sealed class OrderTests
             Now));
     }
 
+    /// <summary>Проверяет разрешённую последовательность переходов статуса.</summary>
     [Fact]
     public void ChangeStatus_AllowsConfiguredTransition()
     {
@@ -55,6 +61,7 @@ public sealed class OrderTests
         Assert.Equal(OrderStatus.Processing, order.Status);
     }
 
+    /// <summary>Проверяет запрет пропуска обязательных этапов заказа.</summary>
     [Fact]
     public void ChangeStatus_RejectsSkippingStages()
     {
@@ -64,6 +71,9 @@ public sealed class OrderTests
             order.ChangeStatus(OrderStatus.Delivered, Now.AddMinutes(1)));
     }
 
+    /// <summary>
+    /// Создаёт заказ, ожидающий онлайн-оплаты.
+    /// </summary>
     private static Order CreateOnlineOrder()
     {
         var product = ProductTests.CreateProduct();

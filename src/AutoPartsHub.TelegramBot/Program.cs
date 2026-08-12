@@ -38,4 +38,7 @@ await DbSeeder.InitializeAsync(
     CancellationToken.None);
 await host.RunAsync();
 
+/// <summary>
+/// Служит точкой привязки для интеграционных тестов и средств запуска приложения.
+/// </summary>
 public partial class Program;

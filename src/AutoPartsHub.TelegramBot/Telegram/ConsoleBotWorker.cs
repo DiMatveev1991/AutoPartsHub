@@ -4,11 +4,20 @@ using Microsoft.Extensions.Options;
 
 namespace AutoPartsHub.TelegramBot.Telegram;
 
+/// <summary>
+/// Предоставляет консольный интерфейс с теми же командами, что и Telegram-бот.
+/// </summary>
+/// <param name="scopeFactory">Фабрика областей зависимостей для обработки команд.</param>
+/// <param name="options">Настройки Telegram и консольного режима.</param>
+/// <param name="lifetime">Управление временем жизни приложения.</param>
 public sealed class ConsoleBotWorker(
     IServiceScopeFactory scopeFactory,
     IOptions<TelegramOptions> options,
     IHostApplicationLifetime lifetime) : BackgroundService
 {
+    /// <summary>
+    /// Читает команды из стандартного ввода до отмены или команды <c>/exit</c>.
+    /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!options.Value.EnableConsole)
@@ -26,6 +35,7 @@ public sealed class ConsoleBotWorker(
                 return;
             }
 
+            // Scoped-сервисы и DbContext создаются заново для каждой команды.
             await using var scope = scopeFactory.CreateAsyncScope();
             var handler = scope.ServiceProvider.GetRequiredService<BotCommandHandler>();
             var response = await handler.HandleAsync(

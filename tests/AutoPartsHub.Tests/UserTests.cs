@@ -2,11 +2,15 @@ using AutoPartsHub.Core;
 
 namespace AutoPartsHub.Tests;
 
+/// <summary>
+/// Проверяет правила регистрации и ролей пользователя.
+/// </summary>
 public sealed class UserTests
 {
     private static readonly DateTimeOffset Now =
         new(2026, 8, 12, 12, 0, 0, TimeSpan.Zero);
 
+    /// <summary>Проверяет сохранение Telegram-идентичности пользователя.</summary>
     [Fact]
     public void User_UsesTelegramIdentity()
     {
@@ -17,6 +21,7 @@ public sealed class UserTests
         Assert.Equal(UserRole.Customer, user.Role);
     }
 
+    /// <summary>Проверяет отклонение неположительного идентификатора чата.</summary>
     [Fact]
     public void User_RejectsInvalidTelegramChatId()
     {
@@ -24,6 +29,7 @@ public sealed class UserTests
             new User(0, "Иван", UserRole.Customer, Now));
     }
 
+    /// <summary>Проверяет повышение пользователя до администратора.</summary>
     [Fact]
     public void User_CanBePromotedToAdmin()
     {

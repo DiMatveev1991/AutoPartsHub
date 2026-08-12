@@ -7,6 +7,17 @@ using Microsoft.Extensions.Options;
 
 namespace AutoPartsHub.TelegramBot.Telegram;
 
+/// <summary>
+/// Разбирает пользовательские команды и связывает интерфейс бота с бизнес-сервисами.
+/// </summary>
+/// <param name="users">Сервис пользователей.</param>
+/// <param name="catalog">Сервис каталога.</param>
+/// <param name="carts">Сервис корзины.</param>
+/// <param name="orders">Сервис заказов.</param>
+/// <param name="vehicles">Сервис автомобилей.</param>
+/// <param name="subscriptions">Сервис подписок и уведомлений.</param>
+/// <param name="admin">Административный сервис.</param>
+/// <param name="options">Настройки Telegram.</param>
 public sealed class BotCommandHandler(
     UserService users,
     CatalogService catalog,
@@ -17,6 +28,9 @@ public sealed class BotCommandHandler(
     AdminService admin,
     IOptions<TelegramOptions> options)
 {
+    /// <summary>
+    /// Выполняет одну текстовую команду от пользователя Telegram или консоли.
+    /// </summary>
     public async Task<string> HandleAsync(
         long chatId,
         string displayName,
@@ -32,6 +46,8 @@ public sealed class BotCommandHandler(
                 isConfiguredAdmin,
                 cancellationToken);
 
+            // Команда отделяется от аргументов один раз, после чего маршрутизируется
+            // в соответствующий пользовательский сценарий.
             var (command, argument) = ParseCommand(input);
             return command switch
             {
@@ -64,6 +80,9 @@ public sealed class BotCommandHandler(
         }
     }
 
+    /// <summary>
+    /// Возвращает первые десять товаров каталога с необязательным поисковым запросом.
+    /// </summary>
     private async Task<string> CatalogAsync(string? query, CancellationToken cancellationToken)
     {
         var result = await catalog.SearchAsync(
@@ -72,6 +91,9 @@ public sealed class BotCommandHandler(
         return FormatProducts(result.Items, "Каталог пуст.");
     }
 
+    /// <summary>
+    /// Формирует текстовый список категорий.
+    /// </summary>
     private async Task<string> CategoriesAsync(CancellationToken cancellationToken)
     {
         var categories = await catalog.GetCategoriesAsync(cancellationToken);
@@ -82,6 +104,9 @@ public sealed class BotCommandHandler(
                 categories.Select(item => $"• {item.Name} ({item.Slug})"));
     }
 
+    /// <summary>
+    /// Подбирает и форматирует товары по VIN автомобиля.
+    /// </summary>
     private async Task<string> VinAsync(string argument, CancellationToken cancellationToken)
     {
         var vin = Require(argument, "/vin JT2BG22K1V0123456");
@@ -89,6 +114,9 @@ public sealed class BotCommandHandler(
         return FormatProducts(result.Items, "Для этого автомобиля товары не найдены.");
     }
 
+    /// <summary>
+    /// Разбирает параметры и сохраняет автомобиль пользователя.
+    /// </summary>
     private async Task<string> AddVehicleAsync(
         Guid userId,
         string argument,
@@ -107,6 +135,9 @@ public sealed class BotCommandHandler(
         return $"Автомобиль сохранён: {vehicle.Make} {vehicle.Model}, VIN {vehicle.Vin}.";
     }
 
+    /// <summary>
+    /// Добавляет товар в корзину по артикулу и количеству.
+    /// </summary>
     private async Task<string> AddCartAsync(
         Guid userId,
         string argument,
@@ -124,6 +155,9 @@ public sealed class BotCommandHandler(
         return $"Товар добавлен.\n{FormatCart(cart)}";
     }
 
+    /// <summary>
+    /// Удаляет товар из корзины по артикулу.
+    /// </summary>
     private async Task<string> RemoveFromCartAsync(
         Guid userId,
         string argument,
@@ -135,6 +169,9 @@ public sealed class BotCommandHandler(
         return $"Товар удалён.\n{FormatCart(cart)}";
     }
 
+    /// <summary>
+    /// Разбирает контактные данные и оформляет заказ.
+    /// </summary>
     private async Task<string> CheckoutAsync(
         Guid userId,
         string argument,
@@ -159,6 +196,9 @@ public sealed class BotCommandHandler(
         return $"Заказ {order.OrderNumber} оформлен. Сумма {order.Total:F2} ₽, статус {order.Status}.";
     }
 
+    /// <summary>
+    /// Формирует краткую историю заказов пользователя.
+    /// </summary>
     private async Task<string> OrdersAsync(Guid userId, CancellationToken cancellationToken)
     {
         var items = await orders.GetMineAsync(userId, cancellationToken);
@@ -170,6 +210,9 @@ public sealed class BotCommandHandler(
                     $"• {item.OrderNumber}: {item.Status}, {item.Total:F2} ₽"));
     }
 
+    /// <summary>
+    /// Возвращает состояние заказа по его номеру.
+    /// </summary>
     private async Task<string> StatusAsync(
         Guid userId,
         string argument,
@@ -180,6 +223,9 @@ public sealed class BotCommandHandler(
         return $"Заказ {order.OrderNumber}: {order.Status}. Сумма {order.Total:F2} ₽.";
     }
 
+    /// <summary>
+    /// Создаёт подписку на наличие товара или снижение цены.
+    /// </summary>
     private async Task<string> SubscribeAsync(
         Guid userId,
         string argument,
@@ -201,6 +247,9 @@ public sealed class BotCommandHandler(
             : $"Сообщим, когда цена {product.Article} станет не выше {price:F2} ₽.";
     }
 
+    /// <summary>
+    /// Возвращает последние уведомления пользователя.
+    /// </summary>
     private async Task<string> NotificationsAsync(
         Guid userId,
         CancellationToken cancellationToken)
@@ -213,6 +262,9 @@ public sealed class BotCommandHandler(
                 items.Take(10).Select(item => $"• {item.Text} ({item.Status})"));
     }
 
+    /// <summary>
+    /// Создаёт категорию после проверки роли администратора.
+    /// </summary>
     private async Task<string> AddCategoryAsync(
         UserDto user,
         string argument,
@@ -226,6 +278,9 @@ public sealed class BotCommandHandler(
         return $"Категория {category.Name} создана.";
     }
 
+    /// <summary>
+    /// Создаёт товар после проверки роли администратора.
+    /// </summary>
     private async Task<string> AddProductAsync(
         UserDto user,
         string argument,
@@ -256,6 +311,9 @@ public sealed class BotCommandHandler(
         return $"Товар {product.Article} создан.";
     }
 
+    /// <summary>
+    /// Возвращает администратору последние заказы.
+    /// </summary>
     private async Task<string> AdminOrdersAsync(
         UserDto user,
         CancellationToken cancellationToken)
@@ -270,6 +328,9 @@ public sealed class BotCommandHandler(
                     $"• {item.OrderNumber}: {item.Status}, {item.Total:F2} ₽"));
     }
 
+    /// <summary>
+    /// Изменяет статус заказа после проверки роли администратора.
+    /// </summary>
     private async Task<string> SetStatusAsync(
         UserDto user,
         string argument,
@@ -288,6 +349,9 @@ public sealed class BotCommandHandler(
         return $"Статус заказа {updated.OrderNumber} изменён на {updated.Status}.";
     }
 
+    /// <summary>
+    /// Форматирует коллекцию товаров для текстового интерфейса.
+    /// </summary>
     private static string FormatProducts(
         IReadOnlyCollection<ProductDto> products,
         string emptyMessage)
@@ -311,6 +375,9 @@ public sealed class BotCommandHandler(
         return text.ToString();
     }
 
+    /// <summary>
+    /// Форматирует корзину с позициями и общей стоимостью.
+    /// </summary>
     private static string FormatCart(CartDto cart)
     {
         if (cart.Items.Count == 0)
@@ -321,15 +388,22 @@ public sealed class BotCommandHandler(
         return "Корзина:\n" + string.Join('\n', lines) + $"\nИтого: {cart.Total:F2} ₽";
     }
 
+    /// <summary>
+    /// Выделяет имя команды и оставшуюся строку аргументов.
+    /// </summary>
     private static (string Command, string Argument) ParseCommand(string input)
     {
         var parts = input.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length == 0)
             return (string.Empty, string.Empty);
+        // Telegram может прислать команду вида /catalog@BotName в групповом чате.
         var command = parts[0].Split('@', 2)[0].ToLowerInvariant();
         return (command, parts.Length == 2 ? parts[1].Trim() : string.Empty);
     }
 
+    /// <summary>
+    /// Возвращает обязательный аргумент или сообщает ожидаемый формат команды.
+    /// </summary>
     private static string Require(string value, string example)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -337,6 +411,9 @@ public sealed class BotCommandHandler(
         return value.Trim();
     }
 
+    /// <summary>
+    /// Разделяет аргументы по вертикальной черте и проверяет их количество.
+    /// </summary>
     private static string[] Split(string value, int min, int max, string example)
     {
         var result = value.Split('|', StringSplitOptions.TrimEntries);
@@ -345,19 +422,29 @@ public sealed class BotCommandHandler(
         return result;
     }
 
+    /// <summary>
+    /// Преобразует строку в целое число или создаёт понятную ошибку формата.
+    /// </summary>
     private static int ParseInt(string value, string field) =>
         int.TryParse(value, out var result)
             ? result
             : throw new FormatException($"{field}: требуется целое число.");
 
+    /// <summary>
+    /// Преобразует цену с учётом текущей и инвариантной культуры.
+    /// </summary>
     private static decimal ParseDecimal(string value, string field)
     {
+        // Поддерживаются и локальный десятичный разделитель, и точка из примеров README.
         if (decimal.TryParse(value, NumberStyles.Number, CultureInfo.CurrentCulture, out var result) ||
             decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out result))
             return result;
         throw new FormatException($"{field}: требуется число.");
     }
 
+    /// <summary>
+    /// Преобразует строку в определённое значение перечисления без учёта регистра.
+    /// </summary>
     private static T ParseEnum<T>(string value, string field)
         where T : struct, Enum =>
         Enum.TryParse<T>(value, true, out var result) && Enum.IsDefined(result)
@@ -365,12 +452,16 @@ public sealed class BotCommandHandler(
             : throw new FormatException(
                 $"{field}: допустимы {string.Join(", ", Enum.GetNames<T>())}.");
 
+    /// <summary>
+    /// Проверяет право пользователя выполнять административную команду.
+    /// </summary>
     private static void RequireAdmin(UserDto user)
     {
         if (user.Role != UserRole.Admin)
             throw new AppException("Команда доступна только администратору.");
     }
 
+    /// <summary>Текст справки по пользовательским и административным командам.</summary>
     private const string HelpText =
         "AutoParts Hub\n" +
         "/catalog — каталог\n" +

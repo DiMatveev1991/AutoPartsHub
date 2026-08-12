@@ -6,10 +6,18 @@ using Telegram.Bot.Types;
 
 namespace AutoPartsHub.TelegramBot.Telegram;
 
+/// <summary>
+/// Преобразует входящие обновления Telegram в вызовы обработчика команд.
+/// </summary>
+/// <param name="scopeFactory">Фабрика областей зависимостей для обработки сообщений.</param>
+/// <param name="logger">Журнал приложения.</param>
 public sealed class TelegramUpdateHandler(
     IServiceScopeFactory scopeFactory,
     ILogger<TelegramUpdateHandler> logger) : IUpdateHandler
 {
+    /// <summary>
+    /// Обрабатывает текстовое сообщение и отправляет пользователю результат команды.
+    /// </summary>
     public async Task HandleUpdateAsync(
         ITelegramBotClient botClient,
         Update update,
@@ -22,6 +30,7 @@ public sealed class TelegramUpdateHandler(
         string response;
         try
         {
+            // Один update получает отдельный scope и отдельный экземпляр DbContext.
             await using var scope = scopeFactory.CreateAsyncScope();
             var handler = scope.ServiceProvider.GetRequiredService<BotCommandHandler>();
             var displayName = string.Join(
@@ -49,6 +58,9 @@ public sealed class TelegramUpdateHandler(
             cancellationToken: cancellationToken);
     }
 
+    /// <summary>
+    /// Записывает в журнал необработанную ошибку инфраструктуры Telegram.
+    /// </summary>
     public Task HandleErrorAsync(
         ITelegramBotClient botClient,
         Exception exception,
