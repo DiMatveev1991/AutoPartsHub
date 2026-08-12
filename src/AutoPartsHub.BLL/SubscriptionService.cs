@@ -1,0 +1,94 @@
+using AutoPartsHub.BLL.Contracts;
+using AutoPartsHub.Core;
+
+namespace AutoPartsHub.BLL;
+
+public sealed class SubscriptionService(
+    IAutoPartsRepository repository,
+    INotificationSender notificationSender,
+    IClock clock)
+{
+    public async Task SubscribeAsync(
+        Guid userId,
+        SubscribeRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (await repository.FindProductAsync(request.ProductId, cancellationToken) is null)
+            throw new NotFoundException("Товар не найден.");
+        if (await repository.ActiveSubscriptionExistsAsync(
+                userId,
+                request.ProductId,
+                request.Type,
+                cancellationToken))
+            throw new ConflictException("Такая подписка уже существует.");
+
+        await repository.AddSubscriptionAsync(
+            new ProductSubscription(
+                userId,
+                request.ProductId,
+                request.Type,
+                request.TargetPrice,
+                clock.UtcNow),
+            cancellationToken);
+        await repository.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<NotificationDto>> GetNotificationsAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var items = await repository.GetNotificationsAsync(userId, cancellationToken);
+        return items.Select(item => new NotificationDto(
+            item.Id,
+            item.Type,
+            item.Text,
+            item.Status,
+            item.CreatedAt,
+            item.SentAt)).ToArray();
+    }
+
+    public async Task<int> PrepareTriggeredNotificationsAsync(CancellationToken cancellationToken)
+    {
+        var subscriptions = await repository.GetTriggeredSubscriptionsAsync(cancellationToken);
+        foreach (var subscription in subscriptions)
+        {
+            var product = subscription.Product
+                ?? throw new InvalidOperationException("Товар подписки не загружен.");
+            var text = subscription.Type == SubscriptionType.BackInStock
+                ? $"Товар «{product.Name}» ({product.Article}) снова в наличии."
+                : $"Цена товара «{product.Name}» снизилась до {product.Price:F2}.";
+
+            await repository.AddNotificationAsync(
+                new Notification(subscription.UserId, subscription.Type.ToString(), text, clock.UtcNow),
+                cancellationToken);
+            subscription.Complete();
+        }
+
+        if (subscriptions.Count > 0)
+            await repository.SaveChangesAsync(cancellationToken);
+        return subscriptions.Count;
+    }
+
+    public async Task<int> SendPendingAsync(CancellationToken cancellationToken)
+    {
+        var notifications = await repository.GetPendingNotificationsAsync(cancellationToken);
+        foreach (var notification in notifications)
+        {
+            var user = notification.User
+                ?? throw new InvalidOperationException("Пользователь уведомления не загружен.");
+            try
+            {
+                await notificationSender.SendAsync(user, notification, cancellationToken);
+                notification.MarkSent(clock.UtcNow);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                notification.MarkFailed(exception.Message);
+            }
+        }
+
+        if (notifications.Count > 0)
+            await repository.SaveChangesAsync(cancellationToken);
+        return notifications.Count;
+    }
+}
