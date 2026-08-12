@@ -3,17 +3,28 @@ using AutoPartsHub.Core;
 
 namespace AutoPartsHub.BLL;
 
+/// <summary>
+/// Оформляет заказы и предоставляет пользователю историю покупок.
+/// </summary>
+/// <param name="repository">Хранилище данных приложения.</param>
+/// <param name="orderNumbers">Генератор номеров заказов.</param>
+/// <param name="clock">Источник текущего времени.</param>
 public sealed class OrderService(
     IAutoPartsRepository repository,
     IOrderNumberGenerator orderNumbers,
     IClock clock)
 {
+    /// <summary>
+    /// Оформляет содержимое корзины как заказ в одной транзакции.
+    /// </summary>
     public Task<OrderDto> CheckoutAsync(
         Guid userId,
         CheckoutRequest request,
         CancellationToken cancellationToken) =>
         repository.ExecuteInTransactionAsync(async transactionToken =>
         {
+            // Загрузка, резервирование остатков, создание заказа и очистка корзины
+            // должны завершиться целиком либо быть полностью отменены.
             var cart = await repository.FindCartAsync(userId, transactionToken);
             if (cart is null || cart.Items.Count == 0)
                 throw new DomainException("Нельзя оформить пустую корзину.");
@@ -43,6 +54,9 @@ public sealed class OrderService(
             return order.ToDto();
         }, cancellationToken);
 
+    /// <summary>
+    /// Возвращает историю заказов пользователя.
+    /// </summary>
     public async Task<IReadOnlyCollection<OrderDto>> GetMineAsync(
         Guid userId,
         CancellationToken cancellationToken)
@@ -51,6 +65,9 @@ public sealed class OrderService(
         return orders.Select(order => order.ToDto()).ToArray();
     }
 
+    /// <summary>
+    /// Возвращает заказ пользователя по внутреннему идентификатору.
+    /// </summary>
     public async Task<OrderDto> GetMineAsync(
         Guid userId,
         Guid orderId,
@@ -62,6 +79,9 @@ public sealed class OrderService(
         return order.ToDto();
     }
 
+    /// <summary>
+    /// Находит заказ пользователя по человекочитаемому номеру.
+    /// </summary>
     public async Task<OrderDto> FindByNumberAsync(
         Guid userId,
         string orderNumber,

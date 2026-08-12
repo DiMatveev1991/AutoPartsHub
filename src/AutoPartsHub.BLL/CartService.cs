@@ -3,14 +3,25 @@ using AutoPartsHub.Core;
 
 namespace AutoPartsHub.BLL;
 
+/// <summary>
+/// Выполняет операции над пользовательской корзиной.
+/// </summary>
+/// <param name="repository">Хранилище данных приложения.</param>
+/// <param name="clock">Источник текущего времени.</param>
 public sealed class CartService(IAutoPartsRepository repository, IClock clock)
 {
+    /// <summary>
+    /// Возвращает корзину пользователя, создавая её при первом обращении.
+    /// </summary>
     public async Task<CartDto> GetAsync(Guid userId, CancellationToken cancellationToken)
     {
         var cart = await GetOrCreateAsync(userId, cancellationToken);
         return cart.ToDto();
     }
 
+    /// <summary>
+    /// Добавляет товар в корзину пользователя.
+    /// </summary>
     public async Task<CartDto> AddAsync(
         Guid userId,
         AddCartItemRequest request,
@@ -24,6 +35,9 @@ public sealed class CartService(IAutoPartsRepository repository, IClock clock)
         return cart.ToDto();
     }
 
+    /// <summary>
+    /// Изменяет количество выбранного товара в корзине.
+    /// </summary>
     public async Task<CartDto> ChangeQuantityAsync(
         Guid userId,
         Guid productId,
@@ -40,6 +54,9 @@ public sealed class CartService(IAutoPartsRepository repository, IClock clock)
         return cart.ToDto();
     }
 
+    /// <summary>
+    /// Удаляет товар из корзины пользователя.
+    /// </summary>
     public async Task<CartDto> RemoveAsync(
         Guid userId,
         Guid productId,
@@ -52,6 +69,9 @@ public sealed class CartService(IAutoPartsRepository repository, IClock clock)
         return cart.ToDto();
     }
 
+    /// <summary>
+    /// Загружает существующую корзину или создаёт новую доменную сущность.
+    /// </summary>
     private async Task<Cart> GetOrCreateAsync(Guid userId, CancellationToken cancellationToken)
     {
         var cart = await repository.FindCartAsync(userId, cancellationToken);

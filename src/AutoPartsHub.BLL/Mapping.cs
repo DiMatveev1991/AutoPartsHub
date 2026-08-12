@@ -3,11 +3,20 @@ using AutoPartsHub.Core;
 
 namespace AutoPartsHub.BLL;
 
+/// <summary>
+/// Содержит преобразования доменных сущностей в контракты бизнес-слоя.
+/// </summary>
 internal static class Mapping
 {
+    /// <summary>
+    /// Преобразует пользователя в DTO.
+    /// </summary>
     public static UserDto ToDto(this User user) =>
         new(user.Id, user.TelegramChatId, user.DisplayName, user.Role);
 
+    /// <summary>
+    /// Преобразует товар и его совместимость в DTO.
+    /// </summary>
     public static ProductDto ToDto(this Product product) =>
         new(
             product.Id,
@@ -29,6 +38,9 @@ internal static class Mapping
                     item.Engine))
                 .ToArray());
 
+    /// <summary>
+    /// Преобразует корзину в DTO и рассчитывает стоимость строк и итог.
+    /// </summary>
     public static CartDto ToDto(this Cart cart)
     {
         var items = cart.Items.Select(item =>
@@ -48,6 +60,9 @@ internal static class Mapping
         return new CartDto(cart.Id, items, items.Sum(item => item.LineTotal));
     }
 
+    /// <summary>
+    /// Преобразует заказ и его позиции в DTO.
+    /// </summary>
     public static OrderDto ToDto(this Order order) =>
         new(
             order.Id,

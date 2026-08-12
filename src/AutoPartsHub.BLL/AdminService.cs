@@ -3,8 +3,16 @@ using AutoPartsHub.Core;
 
 namespace AutoPartsHub.BLL;
 
+/// <summary>
+/// Выполняет административные сценарии каталога и заказов.
+/// </summary>
+/// <param name="repository">Хранилище данных приложения.</param>
+/// <param name="clock">Источник текущего времени.</param>
 public sealed class AdminService(IAutoPartsRepository repository, IClock clock)
 {
+    /// <summary>
+    /// Создаёт новую категорию с уникальным slug.
+    /// </summary>
     public async Task<CategoryDto> CreateCategoryAsync(
         CreateCategoryRequest request,
         CancellationToken cancellationToken)
@@ -18,6 +26,9 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock)
         return new CategoryDto(category.Id, category.Name, category.Slug);
     }
 
+    /// <summary>
+    /// Создаёт новый товар вместе с правилами совместимости.
+    /// </summary>
     public async Task<ProductDto> CreateProductAsync(
         CreateProductRequest request,
         CancellationToken cancellationToken)
@@ -42,6 +53,9 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock)
         return product.ToDto();
     }
 
+    /// <summary>
+    /// Обновляет характеристики и совместимость существующего товара.
+    /// </summary>
     public async Task<ProductDto> UpdateProductAsync(
         Guid id,
         UpdateProductRequest request,
@@ -65,6 +79,9 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock)
         return product.ToDto();
     }
 
+    /// <summary>
+    /// Скрывает товар из пользовательского каталога.
+    /// </summary>
     public async Task DeactivateProductAsync(Guid id, CancellationToken cancellationToken)
     {
         var product = await repository.FindProductAsync(id, cancellationToken)
@@ -73,6 +90,9 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock)
         await repository.SaveChangesAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Возвращает все заказы для административного просмотра.
+    /// </summary>
     public async Task<IReadOnlyCollection<OrderDto>> GetOrdersAsync(
         CancellationToken cancellationToken)
     {
@@ -80,6 +100,9 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock)
         return orders.Select(order => order.ToDto()).ToArray();
     }
 
+    /// <summary>
+    /// Изменяет статус заказа и создаёт уведомление для покупателя.
+    /// </summary>
     public async Task<OrderDto> ChangeOrderStatusAsync(
         Guid id,
         ChangeOrderStatusRequest request,
@@ -100,12 +123,18 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock)
         return order.ToDto();
     }
 
+    /// <summary>
+    /// Проверяет существование выбранной категории.
+    /// </summary>
     private async Task RequireCategoryAsync(Guid id, CancellationToken cancellationToken)
     {
         if (await repository.FindCategoryAsync(id, cancellationToken) is null)
             throw new NotFoundException("Категория не найдена.");
     }
 
+    /// <summary>
+    /// Преобразует административный контракт совместимости в доменную спецификацию.
+    /// </summary>
     private static ProductCompatibilitySpec ToSpec(CompatibilityRequest item) =>
         new(item.Make, item.Model, item.YearFrom, item.YearTo, item.Engine);
 }

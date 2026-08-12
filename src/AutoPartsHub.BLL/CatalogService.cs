@@ -3,8 +3,15 @@ using AutoPartsHub.Core;
 
 namespace AutoPartsHub.BLL;
 
+/// <summary>
+/// Выполняет пользовательские сценарии поиска и просмотра каталога.
+/// </summary>
+/// <param name="repository">Хранилище данных приложения.</param>
 public sealed class CatalogService(IAutoPartsRepository repository)
 {
+    /// <summary>
+    /// Возвращает отфильтрованную страницу товаров.
+    /// </summary>
     public async Task<PagedResult<ProductDto>> SearchAsync(
         CatalogFilter filter,
         CancellationToken cancellationToken)
@@ -30,6 +37,9 @@ public sealed class CatalogService(IAutoPartsRepository repository)
             totalCount);
     }
 
+    /// <summary>
+    /// Подбирает страницу совместимых товаров по VIN сохранённого автомобиля.
+    /// </summary>
     public async Task<PagedResult<ProductDto>> SearchByVinAsync(
         string vin,
         int page,
@@ -52,6 +62,9 @@ public sealed class CatalogService(IAutoPartsRepository repository)
             cancellationToken);
     }
 
+    /// <summary>
+    /// Возвращает товар по его идентификатору.
+    /// </summary>
     public async Task<ProductDto> GetAsync(Guid id, CancellationToken cancellationToken)
     {
         var product = await repository.FindProductAsync(id, cancellationToken)
@@ -59,6 +72,9 @@ public sealed class CatalogService(IAutoPartsRepository repository)
         return product.ToDto();
     }
 
+    /// <summary>
+    /// Возвращает товар по артикулу.
+    /// </summary>
     public async Task<ProductDto> GetByArticleAsync(
         string article,
         CancellationToken cancellationToken)
@@ -69,6 +85,9 @@ public sealed class CatalogService(IAutoPartsRepository repository)
         return product.ToDto();
     }
 
+    /// <summary>
+    /// Возвращает доступные категории каталога.
+    /// </summary>
     public async Task<IReadOnlyCollection<CategoryDto>> GetCategoriesAsync(
         CancellationToken cancellationToken)
     {
@@ -76,6 +95,9 @@ public sealed class CatalogService(IAutoPartsRepository repository)
         return items.Select(item => new CategoryDto(item.Id, item.Name, item.Slug)).ToArray();
     }
 
+    /// <summary>
+    /// Проверяет границы пагинации и диапазоны фильтра.
+    /// </summary>
     private static void Validate(CatalogFilter filter)
     {
         if (filter.Page <= 0)

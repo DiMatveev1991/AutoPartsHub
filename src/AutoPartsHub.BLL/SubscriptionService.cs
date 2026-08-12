@@ -3,11 +3,20 @@ using AutoPartsHub.Core;
 
 namespace AutoPartsHub.BLL;
 
+/// <summary>
+/// Управляет товарными подписками и доставкой созданных уведомлений.
+/// </summary>
+/// <param name="repository">Хранилище данных приложения.</param>
+/// <param name="notificationSender">Канал отправки уведомлений.</param>
+/// <param name="clock">Источник текущего времени.</param>
 public sealed class SubscriptionService(
     IAutoPartsRepository repository,
     INotificationSender notificationSender,
     IClock clock)
 {
+    /// <summary>
+    /// Создаёт уникальную активную подписку пользователя на товар.
+    /// </summary>
     public async Task SubscribeAsync(
         Guid userId,
         SubscribeRequest request,
@@ -33,6 +42,9 @@ public sealed class SubscriptionService(
         await repository.SaveChangesAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Возвращает историю уведомлений пользователя.
+    /// </summary>
     public async Task<IReadOnlyCollection<NotificationDto>> GetNotificationsAsync(
         Guid userId,
         CancellationToken cancellationToken)
@@ -47,6 +59,9 @@ public sealed class SubscriptionService(
             item.SentAt)).ToArray();
     }
 
+    /// <summary>
+    /// Создаёт уведомления для всех сработавших подписок.
+    /// </summary>
     public async Task<int> PrepareTriggeredNotificationsAsync(CancellationToken cancellationToken)
     {
         var subscriptions = await repository.GetTriggeredSubscriptionsAsync(cancellationToken);
@@ -64,11 +79,15 @@ public sealed class SubscriptionService(
             subscription.Complete();
         }
 
+        // Подписка завершается и уведомление добавляется одним сохранением.
         if (subscriptions.Count > 0)
             await repository.SaveChangesAsync(cancellationToken);
         return subscriptions.Count;
     }
 
+    /// <summary>
+    /// Отправляет ожидающие уведомления и фиксирует результат каждой попытки.
+    /// </summary>
     public async Task<int> SendPendingAsync(CancellationToken cancellationToken)
     {
         var notifications = await repository.GetPendingNotificationsAsync(cancellationToken);
@@ -83,6 +102,7 @@ public sealed class SubscriptionService(
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
+                // Ошибка одного получателя не должна останавливать всю пакетную обработку.
                 notification.MarkFailed(exception.Message);
             }
         }
