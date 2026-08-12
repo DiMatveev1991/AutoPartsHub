@@ -32,6 +32,8 @@ public sealed class NotificationWorker(
             }
             catch (Exception exception)
             {
+                // Ошибка одного цикла журналируется, но worker продолжает работу
+                // на следующем тике и не требует перезапуска всего приложения.
                 logger.LogError(exception, "Ошибка фоновой обработки уведомлений");
             }
         }
@@ -43,6 +45,9 @@ public sealed class NotificationWorker(
     /// </summary>
     private async Task ProcessAsync(CancellationToken cancellationToken)
     {
+        // BackgroundService является Singleton, а SubscriptionService использует
+        // Scoped DbContext. Новый scope на цикл исключает совместное использование
+        // контекста между итерациями и гарантирует его освобождение.
         await using var scope = scopeFactory.CreateAsyncScope();
         var service = scope.ServiceProvider.GetRequiredService<SubscriptionService>();
         var created = await service.PrepareTriggeredNotificationsAsync(cancellationToken);

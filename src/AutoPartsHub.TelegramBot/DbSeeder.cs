@@ -21,17 +21,25 @@ public static class DbSeeder
         ILogger logger,
         CancellationToken cancellationToken)
     {
+        // DbContext зарегистрирован как Scoped, поэтому его нельзя получать напрямую
+        // из корневого IServiceProvider. Временный scope корректно освобождает контекст.
         await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<AutoPartsDbContext>();
+        var clock = scope.ServiceProvider.GetRequiredService<IClock>();
 
+        // Автомиграции удобны для учебного проекта и локального Docker-запуска.
+        // В окружении с отдельным этапом деплоя их можно отключить настройкой
+        // Database:ApplyMigrationsOnStartup и выполнить через dotnet ef заранее.
         if (configuration.GetValue("Database:ApplyMigrationsOnStartup", true))
             await db.Database.MigrateAsync(cancellationToken);
 
-        // Наличие любого товара означает, что пользователь уже наполнял каталог.
-        if (await db.Products.AnyAsync(cancellationToken))
+        // Seeder заполняет только полностью пустой каталог. Это не позволяет ему
+        // перезаписать пользовательские данные или создать категории с тем же slug.
+        if (await db.Products.AnyAsync(cancellationToken) ||
+            await db.Categories.AnyAsync(cancellationToken))
             return;
 
-        var now = DateTimeOffset.UtcNow;
+        var now = clock.UtcNow;
         var filters = new Category("Фильтры", "filters");
         var brakes = new Category("Тормозная система", "brakes");
         await db.Categories.AddRangeAsync([filters, brakes], cancellationToken);

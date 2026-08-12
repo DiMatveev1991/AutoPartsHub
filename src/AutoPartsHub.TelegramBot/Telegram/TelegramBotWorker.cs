@@ -41,6 +41,8 @@ public sealed class TelegramBotWorker(
             ],
             cancellationToken: stoppingToken);
 
+        // DropPendingUpdates защищает от повторного выполнения старых команд после
+        // перезапуска — особенно оформления заказа и административных операций.
         // StartReceiving запускает внутренний цикл; жизненный цикл worker удерживается Task.Delay ниже.
         client.StartReceiving(
             handler,

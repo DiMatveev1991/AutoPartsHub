@@ -73,6 +73,9 @@ public sealed class BotCommandHandler(
                 _ => "Неизвестная команда. Используйте /help."
             };
         }
+        // Здесь перехватываются только ожидаемые ошибки ввода и бизнес-правил.
+        // Неожиданные технические ошибки поднимаются в TelegramUpdateHandler,
+        // где журналируются с полным stack trace и скрываются от пользователя.
         catch (Exception exception) when (
             exception is DomainException or AppException or FormatException or ArgumentException)
         {
@@ -457,6 +460,8 @@ public sealed class BotCommandHandler(
     /// </summary>
     private static void RequireAdmin(UserDto user)
     {
+        // Роль загружена из БД сервисом пользователей и не передаётся в тексте
+        // команды, поэтому пользователь не может назначить её самостоятельно.
         if (user.Role != UserRole.Admin)
             throw new AppException("Команда доступна только администратору.");
     }

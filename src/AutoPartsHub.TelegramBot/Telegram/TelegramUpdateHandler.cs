@@ -48,6 +48,8 @@ public sealed class TelegramUpdateHandler(
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            // Технические детали сохраняются в журнале, но пользователю не
+            // раскрываются строки подключения, SQL и внутреннее устройство приложения.
             logger.LogError(exception, "Ошибка обработки Telegram-команды");
             response = "Не удалось выполнить команду. Повторите позже.";
         }
