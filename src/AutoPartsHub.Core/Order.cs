@@ -35,6 +35,8 @@ public sealed class Order
         DeliveryAddress = Required(deliveryAddress, nameof(deliveryAddress), 500);
         DeliveryMethod = deliveryMethod;
         PaymentMethod = paymentMethod;
+        // Онлайн-платёж требует отдельного подтверждения, а оплата при получении
+        // позволяет сразу передать заказ в обработку.
         Status = paymentMethod == PaymentMethod.CardOnline
             ? OrderStatus.PendingPayment
             : OrderStatus.Processing;
@@ -145,6 +147,8 @@ public sealed class Order
     /// Проверяет допустимость перехода между статусами заказа.
     /// </summary>
     private static bool CanMove(OrderStatus current, OrderStatus next) =>
+        // Delivered и Cancelled намеренно отсутствуют: это конечные состояния,
+        // из которых дальнейшие переходы запрещены.
         current switch
         {
             OrderStatus.PendingPayment => next is OrderStatus.Paid or OrderStatus.Cancelled,

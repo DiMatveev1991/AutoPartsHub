@@ -16,6 +16,9 @@ public sealed class CartService(IAutoPartsRepository repository, IClock clock)
     public async Task<CartDto> GetAsync(Guid userId, CancellationToken cancellationToken)
     {
         var cart = await GetOrCreateAsync(userId, cancellationToken);
+        // Корзина создаётся лениво при первом обращении. Сохранение даёт ей
+        // стабильный Id и позволяет уникальному индексу гарантировать одну корзину на пользователя.
+        await repository.SaveChangesAsync(cancellationToken);
         return cart.ToDto();
     }
 
@@ -79,6 +82,8 @@ public sealed class CartService(IAutoPartsRepository repository, IClock clock)
             return cart;
 
         cart = new Cart(userId, clock.UtcNow);
+        // AddCartAsync только добавляет сущность в Change Tracker. Транзакционная
+        // граница и момент SaveChanges остаются у публичного сценария-вызывателя.
         await repository.AddCartAsync(cart, cancellationToken);
         return cart;
     }

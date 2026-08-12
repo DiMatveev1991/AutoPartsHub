@@ -67,6 +67,8 @@ public sealed class Notification
     /// </summary>
     public void MarkFailed(string error)
     {
+        // Failed не выбирается повторно фоновым worker: так постоянная ошибка
+        // Telegram не создаёт бесконечный цикл. Причина остаётся для диагностики.
         Status = NotificationStatus.Failed;
         Error = string.IsNullOrWhiteSpace(error) ? "Unknown error" : error[..Math.Min(error.Length, 1000)];
     }

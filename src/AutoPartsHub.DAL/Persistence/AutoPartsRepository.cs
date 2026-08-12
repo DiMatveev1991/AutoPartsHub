@@ -29,8 +29,9 @@ public sealed class AutoPartsRepository(AutoPartsDbContext db) : IAutoPartsRepos
         ProductSearchQuery filter,
         CancellationToken cancellationToken)
     {
-        // AsSplitQuery предотвращает декартово умножение строк при загрузке
-        // категории и коллекции совместимостей одним запросом.
+        // Каталог используется только для чтения, поэтому AsNoTracking уменьшает
+        // расходы Change Tracker. AsSplitQuery предотвращает декартово умножение
+        // строк при загрузке категории и коллекции совместимостей одним запросом.
         var query = db.Products
             .AsNoTracking()
             .Where(item => item.IsActive)
@@ -83,6 +84,8 @@ public sealed class AutoPartsRepository(AutoPartsDbContext db) : IAutoPartsRepos
 
     /// <summary>Находит товар с категорией и совместимостями по идентификатору.</summary>
     public Task<Product?> FindProductAsync(Guid id, CancellationToken cancellationToken) =>
+        // Товар остаётся tracked: этот метод используют корзина, checkout и
+        // администрирование, где доменная сущность может быть изменена и сохранена.
         db.Products
             .Include(item => item.Category)
             .Include(item => item.Compatibilities)
@@ -215,6 +218,8 @@ public sealed class AutoPartsRepository(AutoPartsDbContext db) : IAutoPartsRepos
     /// <summary>Возвращает активные подписки, условия которых уже выполнены.</summary>
     public async Task<IReadOnlyCollection<ProductSubscription>> GetTriggeredSubscriptionsAsync(
         CancellationToken cancellationToken) =>
+        // Условие повторяет ProductSubscription.IsTriggeredBy, потому что доменный
+        // метод нельзя перевести в SQL. Фильтрация в БД не загружает все подписки в память.
         await db.ProductSubscriptions
             .Include(item => item.Product)
             .Where(item => item.IsActive &&
@@ -239,6 +244,8 @@ public sealed class AutoPartsRepository(AutoPartsDbContext db) : IAutoPartsRepos
             .Include(item => item.User)
             .Where(item => item.Status == NotificationStatus.Pending)
             .OrderBy(item => item.CreatedAt)
+            // Ограничение размера не даёт одному циклу фонового worker занять память
+            // и задержать приложение при большой очереди уведомлений.
             .Take(100)
             .ToArrayAsync(cancellationToken);
 
@@ -268,6 +275,8 @@ public sealed class AutoPartsRepository(AutoPartsDbContext db) : IAutoPartsRepos
             when (exception.InnerException is PostgresException
                   { SqlState: PostgresErrorCodes.UniqueViolation })
         {
+            // Уникальные индексы остаются последней защитой от гонки между двумя
+            // предварительными проверками существования записи.
             throw new InvalidOperationException(
                 "Запись с такими уникальными данными уже существует.",
                 exception);
@@ -290,6 +299,8 @@ public sealed class AutoPartsRepository(AutoPartsDbContext db) : IAutoPartsRepos
         }
         catch
         {
+            // Явный rollback подчёркивает границу единицы работы; исходное
+            // исключение пробрасывается выше без подмены причины.
             await transaction.RollbackAsync(cancellationToken);
             throw;
         }
