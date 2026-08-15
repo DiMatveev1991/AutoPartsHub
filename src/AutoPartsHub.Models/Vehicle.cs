@@ -1,84 +1,34 @@
+using AutoPartsHub.Models.Base;
+
 namespace AutoPartsHub.Models;
 
 /// <summary>
-/// Описывает автомобиль пользователя, для которого подбираются совместимые запчасти.
+/// Хранит сведения об автомобиле пользователя для подбора запчастей.
 /// </summary>
 /// <remarks>
-/// Связь многие-к-одному: много автомобилей может принадлежать одному
-/// <see cref="User"/>.
+/// Нормализация VIN и проверка года находятся в BLL, поэтому модель остаётся
+/// простым объектом данных и подходит для восстановления Entity Framework Core.
 /// </remarks>
-public sealed class Vehicle
+public class Vehicle : Entity
 {
-    /// <summary>
-    /// Создаёт экземпляр автомобиля для восстановления Entity Framework Core.
-    /// </summary>
-    private Vehicle()
-    {
-    }
+    /// <summary>Получает или задаёт внешний ключ владельца.</summary>
+    public Guid UserId { get; set; }
 
-    /// <summary>
-    /// Создаёт автомобиль пользователя и нормализует его VIN.
-    /// </summary>
-    public Vehicle(Guid userId, string vin, string make, string model, int year, string? engine)
-    {
-        if (userId == Guid.Empty)
-            throw new DomainException("Пользователь обязателен.");
-        if (year is < 1950 or > 2100)
-            throw new DomainException("Некорректный год автомобиля.");
+    /// <summary>Получает или задаёт нормализованный VIN.</summary>
+    public string Vin { get; set; } = string.Empty;
 
-        Id = Guid.NewGuid();
-        UserId = userId;
-        Vin = NormalizeVin(vin);
-        Make = Required(make, nameof(make));
-        Model = Required(model, nameof(model));
-        Year = year;
-        Engine = string.IsNullOrWhiteSpace(engine) ? null : engine.Trim();
-    }
+    /// <summary>Получает или задаёт марку автомобиля.</summary>
+    public string Make { get; set; } = string.Empty;
 
-    /// <summary>Получает уникальный идентификатор автомобиля.</summary>
-    public Guid Id { get; private set; }
+    /// <summary>Получает или задаёт модель автомобиля.</summary>
+    public string Model { get; set; } = string.Empty;
 
-    /// <summary>Получает внешний ключ владельца; много автомобилей относится к одному пользователю.</summary>
-    public Guid UserId { get; private set; }
+    /// <summary>Получает или задаёт год выпуска.</summary>
+    public int Year { get; set; }
 
-    /// <summary>Получает нормализованный VIN автомобиля.</summary>
-    public string Vin { get; private set; } = string.Empty;
+    /// <summary>Получает или задаёт обозначение двигателя.</summary>
+    public string? Engine { get; set; }
 
-    /// <summary>Получает марку автомобиля.</summary>
-    public string Make { get; private set; } = string.Empty;
-
-    /// <summary>Получает модель автомобиля.</summary>
-    public string Model { get; private set; } = string.Empty;
-
-    /// <summary>Получает год выпуска автомобиля.</summary>
-    public int Year { get; private set; }
-
-    /// <summary>Получает обозначение двигателя, если оно указано.</summary>
-    public string? Engine { get; private set; }
-
-    /// <summary>Получает сторону «один» связи многие-к-одному с пользователем.</summary>
-    public User? User { get; private set; }
-
-    /// <summary>
-    /// Приводит VIN к единому формату и проверяет допустимые символы.
-    /// </summary>
-    public static string NormalizeVin(string vin)
-    {
-        var value = vin?.Trim().ToUpperInvariant();
-        if (string.IsNullOrWhiteSpace(value) || value.Length != 17 ||
-            value.Any(character => !char.IsLetterOrDigit(character) || character is 'I' or 'O' or 'Q'))
-            throw new DomainException("VIN должен состоять из 17 допустимых символов.");
-        return value;
-    }
-
-    /// <summary>
-    /// Проверяет обязательную строку и удаляет крайние пробелы.
-    /// </summary>
-    private static string Required(string value, string name)
-    {
-        var result = value?.Trim();
-        if (string.IsNullOrWhiteSpace(result) || result.Length > 80)
-            throw new DomainException($"Поле {name} обязательно и не должно превышать 80 символов.");
-        return result;
-    }
+    /// <summary>Получает или задаёт владельца по связи многие-к-одному.</summary>
+    public User? User { get; set; }
 }

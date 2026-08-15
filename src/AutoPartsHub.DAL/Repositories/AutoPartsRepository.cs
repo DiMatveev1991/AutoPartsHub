@@ -220,8 +220,8 @@ public sealed class AutoPartsRepository(AutoPartsDbContext db) : IAutoPartsRepos
     /// <summary>Возвращает активные подписки, условия которых уже выполнены.</summary>
     public async Task<IReadOnlyCollection<ProductSubscription>> GetTriggeredSubscriptionsAsync(
         CancellationToken cancellationToken) =>
-        // Условие повторяет ProductSubscription.IsTriggeredBy, потому что доменный
-        // метод нельзя перевести в SQL. Фильтрация в БД не загружает все подписки в память.
+        // Условие повторяет SubscriptionRules из BLL в форме, переводимой в SQL.
+        // DAL не зависит от BLL, а фильтрация в БД не загружает все подписки в память.
         await db.ProductSubscriptions
             .Include(item => item.Product)
             .Where(item => item.IsActive &&

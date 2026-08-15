@@ -41,11 +41,24 @@ public static class DbSeeder
             return;
 
         var now = clock.UtcNow;
-        var filters = new Category("Фильтры", "filters");
-        var brakes = new Category("Тормозная система", "brakes");
+        // В отличие от пользовательских команд, seeder содержит заранее проверенные
+        // константы и не является бизнес-сценарием. Поэтому он заполняет POCO-модели
+        // напрямую; все внешние данные по-прежнему проходят через правила BLL.
+        var filters = new Category
+        {
+            Id = Guid.NewGuid(),
+            Name = "Фильтры",
+            Slug = "filters"
+        };
+        var brakes = new Category
+        {
+            Id = Guid.NewGuid(),
+            Name = "Тормозная система",
+            Slug = "brakes"
+        };
         await db.Categories.AddRangeAsync([filters, brakes], cancellationToken);
 
-        var oilFilter = new Product(
+        var oilFilter = CreateProduct(
             filters.Id,
             "21050-22010",
             "Масляный фильтр Toyota",
@@ -53,10 +66,10 @@ public static class DbSeeder
             ProductCondition.New,
             450m,
             15,
-            now);
-        oilFilter.AddCompatibility("Toyota", "Camry", 2012, 2018, "2.5");
+            now,
+            ("Toyota", "Camry", 2012, 2018, "2.5"));
 
-        var airFilter = new Product(
+        var airFilter = CreateProduct(
             filters.Id,
             "AF-VAZ-01",
             "Воздушный фильтр ВАЗ",
@@ -64,10 +77,10 @@ public static class DbSeeder
             ProductCondition.New,
             620m,
             8,
-            now);
-        airFilter.AddCompatibility("Lada", "Vesta", 2015, 2026, null);
+            now,
+            ("Lada", "Vesta", 2015, 2026, null));
 
-        var brakePads = new Product(
+        var brakePads = CreateProduct(
             brakes.Id,
             "BP-FORD-02",
             "Передние тормозные колодки Ford",
@@ -75,11 +88,53 @@ public static class DbSeeder
             ProductCondition.Refurbished,
             2300m,
             4,
-            now);
-        brakePads.AddCompatibility("Ford", "Focus", 2011, 2018, null);
+            now,
+            ("Ford", "Focus", 2011, 2018, null));
 
         await db.Products.AddRangeAsync([oilFilter, airFilter, brakePads], cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         logger.LogInformation("Добавлены демонстрационные категории и товары");
+    }
+
+    /// <summary>
+    /// Собирает одну заранее проверенную демонстрационную карточку товара.
+    /// </summary>
+    private static Product CreateProduct(
+        Guid categoryId,
+        string article,
+        string name,
+        string description,
+        ProductCondition condition,
+        decimal price,
+        int stock,
+        DateTimeOffset now,
+        (string Make, string Model, int YearFrom, int YearTo, string? Engine) compatibility)
+    {
+        var product = new Product
+        {
+            Id = Guid.NewGuid(),
+            CategoryId = categoryId,
+            Article = article,
+            Name = name,
+            Description = description,
+            Condition = condition,
+            Price = price,
+            Stock = stock,
+            IsActive = true,
+            ConcurrencyToken = Guid.NewGuid(),
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+        product.Compatibilities.Add(new ProductCompatibility
+        {
+            Id = Guid.NewGuid(),
+            ProductId = product.Id,
+            Make = compatibility.Make,
+            Model = compatibility.Model,
+            YearFrom = compatibility.YearFrom,
+            YearTo = compatibility.YearTo,
+            Engine = compatibility.Engine
+        });
+        return product;
     }
 }

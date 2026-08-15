@@ -2,6 +2,7 @@ using AutoPartsHub.BLL;
 using AutoPartsHub.DTOs;
 using AutoPartsHub.Models;
 using AutoPartsHub.BLL.Interfaces;
+using AutoPartsHub.BLL.Rules;
 using AutoPartsHub.DAL.Interfaces;
 
 namespace AutoPartsHub.BLL.Services;
@@ -35,7 +36,7 @@ public sealed class SubscriptionService(
             throw new ConflictException("Такая подписка уже существует.");
 
         await repository.AddSubscriptionAsync(
-            new ProductSubscription(
+            SubscriptionRules.Create(
                 userId,
                 request.ProductId,
                 request.Type,
@@ -77,9 +78,13 @@ public sealed class SubscriptionService(
                 : $"Цена товара «{product.Name}» снизилась до {product.Price:F2}.";
 
             await repository.AddNotificationAsync(
-                new Notification(subscription.UserId, subscription.Type.ToString(), text, clock.UtcNow),
+                SubscriptionRules.CreateNotification(
+                    subscription.UserId,
+                    subscription.Type.ToString(),
+                    text,
+                    clock.UtcNow),
                 cancellationToken);
-            subscription.Complete();
+            SubscriptionRules.Complete(subscription);
         }
 
         // Подписка завершается и уведомление добавляется одним сохранением.
@@ -101,12 +106,12 @@ public sealed class SubscriptionService(
             try
             {
                 await notificationSender.SendAsync(user, notification, cancellationToken);
-                notification.MarkSent(clock.UtcNow);
+                SubscriptionRules.MarkSent(notification, clock.UtcNow);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
                 // Ошибка одного получателя не должна останавливать всю пакетную обработку.
-                notification.MarkFailed(exception.Message);
+                SubscriptionRules.MarkFailed(notification, exception.Message);
             }
         }
 

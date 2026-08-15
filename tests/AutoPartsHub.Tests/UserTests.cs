@@ -1,10 +1,10 @@
+using AutoPartsHub.BLL;
+using AutoPartsHub.BLL.Rules;
 using AutoPartsHub.Models;
 
 namespace AutoPartsHub.Tests;
 
-/// <summary>
-/// Проверяет правила регистрации и ролей пользователя.
-/// </summary>
+/// <summary>Проверяет правила BLL для регистрации и ролей пользователя.</summary>
 public sealed class UserTests
 {
     private static readonly DateTimeOffset Now =
@@ -12,9 +12,9 @@ public sealed class UserTests
 
     /// <summary>Проверяет сохранение Telegram-идентичности пользователя.</summary>
     [Fact]
-    public void User_UsesTelegramIdentity()
+    public void Create_UsesTelegramIdentity()
     {
-        var user = new User(123456789, "Иван", UserRole.Customer, Now);
+        var user = UserRules.Create(123456789, "Иван", UserRole.Customer, Now);
 
         Assert.Equal(123456789, user.TelegramChatId);
         Assert.Equal("Иван", user.DisplayName);
@@ -23,19 +23,19 @@ public sealed class UserTests
 
     /// <summary>Проверяет отклонение неположительного идентификатора чата.</summary>
     [Fact]
-    public void User_RejectsInvalidTelegramChatId()
+    public void Create_RejectsInvalidTelegramChatId()
     {
         Assert.Throws<DomainException>(() =>
-            new User(0, "Иван", UserRole.Customer, Now));
+            UserRules.Create(0, "Иван", UserRole.Customer, Now));
     }
 
     /// <summary>Проверяет повышение пользователя до администратора.</summary>
     [Fact]
-    public void User_CanBePromotedToAdmin()
+    public void PromoteToAdmin_ChangesRole()
     {
-        var user = new User(123456789, "Иван", UserRole.Customer, Now);
+        var user = UserRules.Create(123456789, "Иван", UserRole.Customer, Now);
 
-        user.PromoteToAdmin();
+        UserRules.PromoteToAdmin(user);
 
         Assert.Equal(UserRole.Admin, user.Role);
     }

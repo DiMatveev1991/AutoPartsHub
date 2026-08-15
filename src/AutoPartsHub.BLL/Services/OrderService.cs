@@ -2,6 +2,7 @@ using AutoPartsHub.BLL;
 using AutoPartsHub.DTOs;
 using AutoPartsHub.Models;
 using AutoPartsHub.BLL.Interfaces;
+using AutoPartsHub.BLL.Rules;
 using AutoPartsHub.DAL.Interfaces;
 
 namespace AutoPartsHub.BLL.Services;
@@ -40,7 +41,7 @@ public sealed class OrderService(
             }).ToArray();
 
             var now = clock.UtcNow;
-            var order = Order.Create(
+            var order = OrderRules.Create(
                 userId,
                 orderNumbers.Next(now),
                 request.ContactName,
@@ -52,7 +53,7 @@ public sealed class OrderService(
                 now);
 
             await repository.AddOrderAsync(order, transactionToken);
-            cart.Clear(now);
+            CartRules.Clear(cart, now);
             await repository.SaveChangesAsync(transactionToken);
             return order.ToDto();
         }, cancellationToken);

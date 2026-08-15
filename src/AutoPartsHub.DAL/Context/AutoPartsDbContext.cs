@@ -80,7 +80,7 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
             entity.HasIndex(item => item.UserId);
             // User 1:N Vehicles. Удаление пользователя каскадно удаляет его автомобили.
             entity.HasOne(item => item.User)
-                .WithMany()
+                .WithMany(item => item.Vehicles)
                 .HasForeignKey(item => item.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
@@ -114,7 +114,7 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
             entity.HasIndex(item => new { item.IsActive, item.CategoryId });
             // Category 1:N Products. Категорию нельзя удалить, пока в ней есть товары.
             entity.HasOne(item => item.Category)
-                .WithMany()
+                .WithMany(item => item.Products)
                 .HasForeignKey(item => item.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
             // Product 1:N ProductCompatibilities. Правила удаляются вместе с товаром.
@@ -122,8 +122,6 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
                 .WithOne(item => item.Product)
                 .HasForeignKey(item => item.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
-            entity.Navigation(item => item.Compatibilities)
-                .UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         builder.Entity<ProductCompatibility>(entity =>
@@ -149,7 +147,7 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
             entity.HasIndex(item => item.UserId).IsUnique();
             // User 1:0..1 Cart. Уникальный UserId гарантирует одну корзину на пользователя.
             entity.HasOne(item => item.User)
-                .WithOne()
+                .WithOne(item => item.Cart)
                 .HasForeignKey<Cart>(item => item.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
             // Cart 1:N CartItems. Позиции удаляются вместе с корзиной.
@@ -157,7 +155,6 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
                 .WithOne(item => item.Cart)
                 .HasForeignKey(item => item.CartId)
                 .OnDelete(DeleteBehavior.Cascade);
-            entity.Navigation(item => item.Items).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         builder.Entity<CartItem>(entity =>
@@ -166,7 +163,7 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
             entity.HasKey(item => new { item.CartId, item.ProductId });
             // Product 1:N CartItems. Товар из активной корзины физически удалить нельзя.
             entity.HasOne(item => item.Product)
-                .WithMany()
+                .WithMany(item => item.CartItems)
                 .HasForeignKey(item => item.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
@@ -187,7 +184,7 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
             entity.HasIndex(item => new { item.UserId, item.CreatedAt });
             // User 1:N Orders. Пользователь с историей заказов не удаляется.
             entity.HasOne(item => item.User)
-                .WithMany()
+                .WithMany(item => item.Orders)
                 .HasForeignKey(item => item.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
             // Order 1:N OrderItems. Позиции являются частью агрегата заказа.
@@ -195,7 +192,6 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
                 .WithOne(item => item.Order)
                 .HasForeignKey(item => item.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
-            entity.Navigation(item => item.Items).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         builder.Entity<OrderItem>(entity =>
@@ -207,7 +203,7 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
             entity.Property(item => item.UnitPrice).HasPrecision(12, 2);
             // Product 1:N OrderItems. Restrict сохраняет ссылку и историю заказа.
             entity.HasOne(item => item.Product)
-                .WithMany()
+                .WithMany(item => item.OrderItems)
                 .HasForeignKey(item => item.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
@@ -227,12 +223,12 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
             entity.HasIndex(item => new { item.UserId, item.ProductId, item.Type, item.IsActive });
             // User 1:N ProductSubscriptions. Подписки удаляются вместе с пользователем.
             entity.HasOne(item => item.User)
-                .WithMany()
+                .WithMany(item => item.ProductSubscriptions)
                 .HasForeignKey(item => item.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
             // Product 1:N ProductSubscriptions. Подписки удаляются вместе с товаром.
             entity.HasOne(item => item.Product)
-                .WithMany()
+                .WithMany(item => item.ProductSubscriptions)
                 .HasForeignKey(item => item.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
@@ -248,7 +244,7 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
             entity.HasIndex(item => new { item.Status, item.CreatedAt });
             // User 1:N Notifications. Уведомления удаляются вместе с пользователем.
             entity.HasOne(item => item.User)
-                .WithMany()
+                .WithMany(item => item.Notifications)
                 .HasForeignKey(item => item.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });

@@ -7,4 +7,9 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Правила остаются internal для потребителей BLL, но тестовый проект
+         проверяет их напрямую без подключения базы данных и Telegram API. -->
+    <InternalsVisibleTo Include="AutoPartsHub.Tests" />
+  </ItemGroup>
 </Project>

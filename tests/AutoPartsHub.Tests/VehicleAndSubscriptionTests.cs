@@ -1,10 +1,10 @@
+using AutoPartsHub.BLL;
+using AutoPartsHub.BLL.Rules;
 using AutoPartsHub.Models;
 
 namespace AutoPartsHub.Tests;
 
-/// <summary>
-/// Проверяет нормализацию VIN и условия товарных подписок.
-/// </summary>
+/// <summary>Проверяет правила BLL для VIN и товарных подписок.</summary>
 public sealed class VehicleAndSubscriptionTests
 {
     private static readonly DateTimeOffset Now =
@@ -12,9 +12,9 @@ public sealed class VehicleAndSubscriptionTests
 
     /// <summary>Проверяет нормализацию корректного VIN.</summary>
     [Fact]
-    public void Vehicle_NormalizesValidVin()
+    public void CreateVehicle_NormalizesValidVin()
     {
-        var vehicle = new Vehicle(
+        var vehicle = VehicleRules.Create(
             Guid.NewGuid(),
             " jt2bg22k1v0123456 ",
             "Toyota",
@@ -30,10 +30,15 @@ public sealed class VehicleAndSubscriptionTests
     [InlineData("SHORT")]
     [InlineData("JT2BG22K1I0123456")]
     [InlineData("JT2BG22K1O0123456")]
-    public void Vehicle_RejectsInvalidVin(string vin)
+    public void CreateVehicle_RejectsInvalidVin(string vin)
     {
-        Assert.Throws<DomainException>(() =>
-            new Vehicle(Guid.NewGuid(), vin, "Toyota", "Camry", 2015, "2.5"));
+        Assert.Throws<DomainException>(() => VehicleRules.Create(
+            Guid.NewGuid(),
+            vin,
+            "Toyota",
+            "Camry",
+            2015,
+            "2.5"));
     }
 
     /// <summary>Проверяет срабатывание подписки при появлении остатка.</summary>
@@ -41,28 +46,27 @@ public sealed class VehicleAndSubscriptionTests
     public void BackInStockSubscription_TriggersWhenStockPositive()
     {
         var product = ProductTests.CreateProduct(stock: 1);
-        var subscription = new ProductSubscription(
+        var subscription = SubscriptionRules.Create(
             Guid.NewGuid(),
             product.Id,
             SubscriptionType.BackInStock,
             null,
             Now);
 
-        Assert.True(subscription.IsTriggeredBy(product));
-        subscription.Complete();
-        Assert.False(subscription.IsTriggeredBy(product));
+        Assert.True(SubscriptionRules.IsTriggered(subscription, product));
+        SubscriptionRules.Complete(subscription);
+        Assert.False(SubscriptionRules.IsTriggered(subscription, product));
     }
 
     /// <summary>Проверяет обязательность целевой цены для подписки на снижение.</summary>
     [Fact]
     public void PriceDropSubscription_RequiresTargetPrice()
     {
-        Assert.Throws<DomainException>(() =>
-            new ProductSubscription(
-                Guid.NewGuid(),
-                Guid.NewGuid(),
-                SubscriptionType.PriceDrop,
-                null,
-                Now));
+        Assert.Throws<DomainException>(() => SubscriptionRules.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            SubscriptionType.PriceDrop,
+            null,
+            Now));
     }
 }

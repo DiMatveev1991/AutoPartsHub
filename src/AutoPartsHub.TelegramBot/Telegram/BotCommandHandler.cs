@@ -78,7 +78,7 @@ public sealed class BotCommandHandler(
         // Неожиданные технические ошибки поднимаются в TelegramUpdateHandler,
         // где журналируются с полным stack trace и скрываются от пользователя.
         catch (Exception exception) when (
-            exception is DomainException or AppException or FormatException or ArgumentException)
+            exception is AppException or FormatException or ArgumentException)
         {
             return $"Ошибка: {exception.Message}";
         }

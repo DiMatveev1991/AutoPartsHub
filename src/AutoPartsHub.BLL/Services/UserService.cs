@@ -2,6 +2,7 @@ using AutoPartsHub.BLL;
 using AutoPartsHub.DTOs;
 using AutoPartsHub.Models;
 using AutoPartsHub.BLL.Interfaces;
+using AutoPartsHub.BLL.Rules;
 using AutoPartsHub.DAL.Interfaces;
 
 namespace AutoPartsHub.BLL.Services;
@@ -25,7 +26,7 @@ public sealed class UserService(IAutoPartsRepository repository, IClock clock) :
         var user = await repository.FindUserByTelegramAsync(telegramChatId, cancellationToken);
         if (user is null)
         {
-            user = new User(
+            user = UserRules.Create(
                 telegramChatId,
                 displayName,
                 isAdmin ? UserRole.Admin : UserRole.Customer,
@@ -36,7 +37,7 @@ public sealed class UserService(IAutoPartsRepository repository, IClock clock) :
         else if (isAdmin && user.Role != UserRole.Admin)
         {
             // Список администраторов задаётся конфигурацией и применяется при следующей команде.
-            user.PromoteToAdmin();
+            UserRules.PromoteToAdmin(user);
             await repository.SaveChangesAsync(cancellationToken);
         }
 

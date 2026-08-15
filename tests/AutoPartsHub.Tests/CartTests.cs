@@ -1,10 +1,10 @@
+using AutoPartsHub.BLL;
+using AutoPartsHub.BLL.Rules;
 using AutoPartsHub.Models;
 
 namespace AutoPartsHub.Tests;
 
-/// <summary>
-/// Проверяет добавление, объединение и удаление позиций корзины.
-/// </summary>
+/// <summary>Проверяет BLL-правила добавления, объединения и удаления позиций корзины.</summary>
 public sealed class CartTests
 {
     private static readonly DateTimeOffset Now =
@@ -14,10 +14,10 @@ public sealed class CartTests
     [Fact]
     public void Add_AddsNewLine()
     {
-        var cart = new Cart(Guid.NewGuid(), Now);
+        var cart = CartRules.Create(Guid.NewGuid(), Now);
         var product = ProductTests.CreateProduct(stock: 5);
 
-        cart.Add(product, 2, Now);
+        CartRules.Add(cart, product, 2, Now);
 
         var item = Assert.Single(cart.Items);
         Assert.Equal(product.Id, item.ProductId);
@@ -28,11 +28,11 @@ public sealed class CartTests
     [Fact]
     public void Add_MergesSameProduct()
     {
-        var cart = new Cart(Guid.NewGuid(), Now);
+        var cart = CartRules.Create(Guid.NewGuid(), Now);
         var product = ProductTests.CreateProduct(stock: 5);
 
-        cart.Add(product, 1, Now);
-        cart.Add(product, 2, Now);
+        CartRules.Add(cart, product, 1, Now);
+        CartRules.Add(cart, product, 2, Now);
 
         Assert.Equal(3, Assert.Single(cart.Items).Quantity);
     }
@@ -41,11 +41,11 @@ public sealed class CartTests
     [Fact]
     public void Add_DoesNotMutateCartWhenStockExceeded()
     {
-        var cart = new Cart(Guid.NewGuid(), Now);
+        var cart = CartRules.Create(Guid.NewGuid(), Now);
         var product = ProductTests.CreateProduct(stock: 2);
-        cart.Add(product, 1, Now);
+        CartRules.Add(cart, product, 1, Now);
 
-        Assert.Throws<DomainException>(() => cart.Add(product, 2, Now));
+        Assert.Throws<DomainException>(() => CartRules.Add(cart, product, 2, Now));
         Assert.Equal(1, Assert.Single(cart.Items).Quantity);
     }
 
@@ -53,11 +53,11 @@ public sealed class CartTests
     [Fact]
     public void Remove_DeletesLine()
     {
-        var cart = new Cart(Guid.NewGuid(), Now);
+        var cart = CartRules.Create(Guid.NewGuid(), Now);
         var product = ProductTests.CreateProduct();
-        cart.Add(product, 1, Now);
+        CartRules.Add(cart, product, 1, Now);
 
-        cart.Remove(product.Id, Now);
+        CartRules.Remove(cart, product.Id, Now);
 
         Assert.Empty(cart.Items);
     }

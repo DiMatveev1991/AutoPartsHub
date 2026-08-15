@@ -1,10 +1,10 @@
+using AutoPartsHub.BLL;
+using AutoPartsHub.BLL.Rules;
 using AutoPartsHub.Models;
 
 namespace AutoPartsHub.Tests;
 
-/// <summary>
-/// Проверяет оформление заказа, снимок цены и переходы статусов.
-/// </summary>
+/// <summary>Проверяет BLL-правила оформления заказа, снимка цены и переходов статусов.</summary>
 public sealed class OrderTests
 {
     private static readonly DateTimeOffset Now =
@@ -16,16 +16,7 @@ public sealed class OrderTests
     {
         var product = ProductTests.CreateProduct(price: 500m, stock: 4);
 
-        var order = Order.Create(
-            Guid.NewGuid(),
-            "ORD-1",
-            "Иван",
-            "+79990000000",
-            "Москва",
-            DeliveryMethod.Courier,
-            PaymentMethod.CashOnDelivery,
-            [(product, 2)],
-            Now);
+        var order = CreateOrder(PaymentMethod.CashOnDelivery, [(product, 2)]);
 
         Assert.Equal(1000m, order.Total);
         Assert.Equal(2, product.Stock);
@@ -37,16 +28,8 @@ public sealed class OrderTests
     [Fact]
     public void Create_RejectsEmptyOrder()
     {
-        Assert.Throws<DomainException>(() => Order.Create(
-            Guid.NewGuid(),
-            "ORD-1",
-            "Иван",
-            "+79990000000",
-            "Москва",
-            DeliveryMethod.Courier,
-            PaymentMethod.CardOnline,
-            [],
-            Now));
+        Assert.Throws<DomainException>(() =>
+            CreateOrder(PaymentMethod.CardOnline, []));
     }
 
     /// <summary>Проверяет разрешённую последовательность переходов статуса.</summary>
@@ -55,8 +38,8 @@ public sealed class OrderTests
     {
         var order = CreateOnlineOrder();
 
-        order.ChangeStatus(OrderStatus.Paid, Now.AddMinutes(1));
-        order.ChangeStatus(OrderStatus.Processing, Now.AddMinutes(2));
+        OrderRules.ChangeStatus(order, OrderStatus.Paid, Now.AddMinutes(1));
+        OrderRules.ChangeStatus(order, OrderStatus.Processing, Now.AddMinutes(2));
 
         Assert.Equal(OrderStatus.Processing, order.Status);
     }
@@ -68,24 +51,25 @@ public sealed class OrderTests
         var order = CreateOnlineOrder();
 
         Assert.Throws<DomainException>(() =>
-            order.ChangeStatus(OrderStatus.Delivered, Now.AddMinutes(1)));
+            OrderRules.ChangeStatus(order, OrderStatus.Delivered, Now.AddMinutes(1)));
     }
 
-    /// <summary>
-    /// Создаёт заказ, ожидающий онлайн-оплаты.
-    /// </summary>
-    private static Order CreateOnlineOrder()
-    {
-        var product = ProductTests.CreateProduct();
-        return Order.Create(
+    /// <summary>Создаёт заказ, ожидающий онлайн-оплаты.</summary>
+    private static Order CreateOnlineOrder() =>
+        CreateOrder(PaymentMethod.CardOnline, [(ProductTests.CreateProduct(), 1)]);
+
+    /// <summary>Создаёт заказ через правило BLL с повторно используемыми контактами.</summary>
+    private static Order CreateOrder(
+        PaymentMethod paymentMethod,
+        IReadOnlyCollection<(Product Product, int Quantity)> lines) =>
+        OrderRules.Create(
             Guid.NewGuid(),
             "ORD-1",
             "Иван",
             "+79990000000",
             "Москва",
             DeliveryMethod.Courier,
-            PaymentMethod.CardOnline,
-            [(product, 1)],
+            paymentMethod,
+            lines,
             Now);
-    }
 }

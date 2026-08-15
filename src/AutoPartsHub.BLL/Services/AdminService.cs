@@ -2,6 +2,7 @@ using AutoPartsHub.BLL;
 using AutoPartsHub.DTOs;
 using AutoPartsHub.Models;
 using AutoPartsHub.BLL.Interfaces;
+using AutoPartsHub.BLL.Rules;
 using AutoPartsHub.DAL.Interfaces;
 
 namespace AutoPartsHub.BLL.Services;
@@ -23,7 +24,7 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
         if (await repository.CategorySlugExistsAsync(request.Slug.Trim().ToLowerInvariant(), cancellationToken))
             throw new ConflictException("Категория с таким slug уже существует.");
 
-        var category = new Category(request.Name, request.Slug);
+        var category = CategoryRules.Create(request.Name, request.Slug);
         await repository.AddCategoryAsync(category, cancellationToken);
         await repository.SaveChangesAsync(cancellationToken);
         return new CategoryDto(category.Id, category.Name, category.Slug);
@@ -40,7 +41,7 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
         if (await repository.ProductArticleExistsAsync(request.Article.Trim().ToUpperInvariant(), cancellationToken))
             throw new ConflictException("Товар с таким артикулом уже существует.");
 
-        var product = new Product(
+        var product = ProductRules.Create(
             request.CategoryId,
             request.Article,
             request.Name,
@@ -49,7 +50,7 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
             request.Price,
             request.Stock,
             clock.UtcNow);
-        product.ReplaceCompatibilities(request.Compatibilities.Select(ToSpec));
+        ProductRules.ReplaceCompatibilities(product, request.Compatibilities.Select(ToValues));
 
         await repository.AddProductAsync(product, cancellationToken);
         await repository.SaveChangesAsync(cancellationToken);
@@ -68,7 +69,8 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
         var product = await repository.FindProductAsync(id, cancellationToken)
             ?? throw new NotFoundException("Товар не найден.");
 
-        product.ChangeDetails(
+        ProductRules.Update(
+            product,
             request.CategoryId,
             request.Name,
             request.Description,
@@ -76,7 +78,7 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
             request.Price,
             request.Stock,
             clock.UtcNow);
-        product.ReplaceCompatibilities(request.Compatibilities.Select(ToSpec));
+        ProductRules.ReplaceCompatibilities(product, request.Compatibilities.Select(ToValues));
 
         await repository.SaveChangesAsync(cancellationToken);
         return product.ToDto();
@@ -89,7 +91,7 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
     {
         var product = await repository.FindProductAsync(id, cancellationToken)
             ?? throw new NotFoundException("Товар не найден.");
-        product.Deactivate(clock.UtcNow);
+        ProductRules.Deactivate(product, clock.UtcNow);
         await repository.SaveChangesAsync(cancellationToken);
     }
 
@@ -114,9 +116,9 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
         var order = await repository.FindOrderAsync(id, cancellationToken)
             ?? throw new NotFoundException("Заказ не найден.");
 
-        order.ChangeStatus(request.Status, clock.UtcNow);
+        OrderRules.ChangeStatus(order, request.Status, clock.UtcNow);
         await repository.AddNotificationAsync(
-            new Notification(
+            SubscriptionRules.CreateNotification(
                 order.UserId,
                 "OrderStatusChanged",
                 $"Статус заказа {order.OrderNumber} изменён на {request.Status}.",
@@ -136,8 +138,9 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
     }
 
     /// <summary>
-    /// Преобразует административный контракт совместимости в доменную спецификацию.
+    /// Преобразует контракт совместимости в независимый набор значений для BLL-правила.
     /// </summary>
-    private static ProductCompatibilitySpec ToSpec(CompatibilityRequest item) =>
-        new(item.Make, item.Model, item.YearFrom, item.YearTo, item.Engine);
+    private static (string Make, string Model, int YearFrom, int YearTo, string? Engine) ToValues(
+        CompatibilityRequest item) =>
+        (item.Make, item.Model, item.YearFrom, item.YearTo, item.Engine);
 }

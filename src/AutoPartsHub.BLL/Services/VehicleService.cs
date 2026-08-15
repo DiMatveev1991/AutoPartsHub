@@ -2,6 +2,7 @@ using AutoPartsHub.BLL;
 using AutoPartsHub.DTOs;
 using AutoPartsHub.Models;
 using AutoPartsHub.BLL.Interfaces;
+using AutoPartsHub.BLL.Rules;
 using AutoPartsHub.DAL.Interfaces;
 
 namespace AutoPartsHub.BLL.Services;
@@ -31,11 +32,11 @@ public sealed class VehicleService(IAutoPartsRepository repository) : IVehicleSe
         AddVehicleRequest request,
         CancellationToken cancellationToken)
     {
-        var normalizedVin = Vehicle.NormalizeVin(request.Vin);
+        var normalizedVin = VehicleRules.NormalizeVin(request.Vin);
         if (await repository.FindVehicleByVinAsync(normalizedVin, cancellationToken) is not null)
             throw new ConflictException("Автомобиль с таким VIN уже добавлен.");
 
-        var vehicle = new Vehicle(
+        var vehicle = VehicleRules.Create(
             userId,
             normalizedVin,
             request.Make,

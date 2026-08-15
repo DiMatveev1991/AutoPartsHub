@@ -23,6 +23,16 @@ public class AppException : Exception
 }
 
 /// <summary>
+/// Указывает, что входные данные или переход состояния нарушают бизнес-правило.
+/// </summary>
+/// <remarks>
+/// Исключение находится в BLL, а не в Models: модели проекта намеренно являются
+/// простыми объектами данных и не должны владеть поведением или зависеть от ошибок сценариев.
+/// </remarks>
+/// <param name="message">Понятное пользователю описание нарушенного правила.</param>
+public sealed class DomainException(string message) : AppException(message);
+
+/// <summary>
 /// Указывает, что запрошенная сущность не найдена.
 /// </summary>
 /// <param name="message">Описание отсутствующей сущности.</param>

@@ -2,6 +2,7 @@ using AutoPartsHub.BLL;
 using AutoPartsHub.DTOs;
 using AutoPartsHub.Models;
 using AutoPartsHub.BLL.Interfaces;
+using AutoPartsHub.BLL.Rules;
 using AutoPartsHub.DAL.Interfaces;
 
 namespace AutoPartsHub.BLL.Services;
@@ -49,7 +50,7 @@ public sealed class CatalogService(IAutoPartsRepository repository) : ICatalogSe
         int pageSize,
         CancellationToken cancellationToken)
     {
-        var normalized = Vehicle.NormalizeVin(vin);
+        var normalized = VehicleRules.NormalizeVin(vin);
         var vehicle = await repository.FindVehicleByVinAsync(normalized, cancellationToken)
             ?? throw new NotFoundException(
                 "VIN пока отсутствует в локальном справочнике. Добавьте автомобиль в личном кабинете.");

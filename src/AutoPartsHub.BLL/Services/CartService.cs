@@ -2,6 +2,7 @@ using AutoPartsHub.BLL;
 using AutoPartsHub.DTOs;
 using AutoPartsHub.Models;
 using AutoPartsHub.BLL.Interfaces;
+using AutoPartsHub.BLL.Rules;
 using AutoPartsHub.DAL.Interfaces;
 
 namespace AutoPartsHub.BLL.Services;
@@ -36,7 +37,7 @@ public sealed class CartService(IAutoPartsRepository repository, IClock clock) :
         var product = await repository.FindProductAsync(request.ProductId, cancellationToken)
             ?? throw new NotFoundException("Товар не найден.");
         var cart = await GetOrCreateAsync(userId, cancellationToken);
-        cart.Add(product, request.Quantity, clock.UtcNow);
+        CartRules.Add(cart, product, request.Quantity, clock.UtcNow);
         await repository.SaveChangesAsync(cancellationToken);
         return cart.ToDto();
     }
@@ -55,7 +56,7 @@ public sealed class CartService(IAutoPartsRepository repository, IClock clock) :
         var product = await repository.FindProductAsync(productId, cancellationToken)
             ?? throw new NotFoundException("Товар не найден.");
 
-        cart.ChangeQuantity(productId, request.Quantity, product.Stock, clock.UtcNow);
+        CartRules.ChangeQuantity(cart, productId, request.Quantity, product.Stock, clock.UtcNow);
         await repository.SaveChangesAsync(cancellationToken);
         return cart.ToDto();
     }
@@ -70,7 +71,7 @@ public sealed class CartService(IAutoPartsRepository repository, IClock clock) :
     {
         var cart = await repository.FindCartAsync(userId, cancellationToken)
             ?? throw new NotFoundException("Корзина не найдена.");
-        cart.Remove(productId, clock.UtcNow);
+        CartRules.Remove(cart, productId, clock.UtcNow);
         await repository.SaveChangesAsync(cancellationToken);
         return cart.ToDto();
     }
@@ -84,7 +85,7 @@ public sealed class CartService(IAutoPartsRepository repository, IClock clock) :
         if (cart is not null)
             return cart;
 
-        cart = new Cart(userId, clock.UtcNow);
+        cart = CartRules.Create(userId, clock.UtcNow);
         // AddCartAsync только добавляет сущность в Change Tracker. Транзакционная
         // граница и момент SaveChanges остаются у публичного сценария-вызывателя.
         await repository.AddCartAsync(cart, cancellationToken);

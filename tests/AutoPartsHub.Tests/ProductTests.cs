@@ -1,10 +1,16 @@
+using AutoPartsHub.BLL;
+using AutoPartsHub.BLL.Rules;
 using AutoPartsHub.Models;
 
 namespace AutoPartsHub.Tests;
 
 /// <summary>
-/// Проверяет бизнес-правила товара и складского остатка.
+/// Проверяет правила BLL для товара и складского остатка.
 /// </summary>
+/// <remarks>
+/// Тесты вызывают BLL-правила, а не методы Product: модель намеренно хранит
+/// только данные, как модели в DeliveryApp.
+/// </remarks>
 public sealed class ProductTests
 {
     private static readonly DateTimeOffset Now =
@@ -12,7 +18,7 @@ public sealed class ProductTests
 
     /// <summary>Проверяет нормализацию артикула при создании товара.</summary>
     [Fact]
-    public void Constructor_NormalizesArticle()
+    public void Create_NormalizesArticle()
     {
         var product = CreateProduct(article: " oil-01 ");
 
@@ -21,7 +27,7 @@ public sealed class ProductTests
 
     /// <summary>Проверяет запрет нулевой и отрицательной цены.</summary>
     [Fact]
-    public void Constructor_RejectsNonPositivePrice()
+    public void Create_RejectsNonPositivePrice()
     {
         Assert.Throws<DomainException>(() => CreateProduct(price: 0));
     }
@@ -32,7 +38,7 @@ public sealed class ProductTests
     {
         var product = CreateProduct(stock: 5);
 
-        product.Reserve(2);
+        ProductRules.Reserve(product, 2);
 
         Assert.Equal(3, product.Stock);
     }
@@ -43,28 +49,27 @@ public sealed class ProductTests
     {
         var product = CreateProduct(stock: 1);
 
-        Assert.Throws<DomainException>(() => product.Reserve(2));
+        Assert.Throws<DomainException>(() => ProductRules.Reserve(product, 2));
         Assert.Equal(1, product.Stock);
     }
 
     /// <summary>Проверяет валидацию диапазона годов совместимости.</summary>
     [Fact]
-    public void AddCompatibility_RejectsInvalidYearRange()
+    public void ReplaceCompatibilities_RejectsInvalidYearRange()
     {
         var product = CreateProduct();
 
-        Assert.Throws<DomainException>(() =>
-            product.AddCompatibility("Toyota", "Camry", 2020, 2019, null));
+        Assert.Throws<DomainException>(() => ProductRules.ReplaceCompatibilities(
+            product,
+            [("Toyota", "Camry", 2020, 2019, null)]));
     }
 
-    /// <summary>
-    /// Создаёт корректный товар для повторного использования в тестах.
-    /// </summary>
+    /// <summary>Создаёт корректный товар через то же BLL-правило, что использует сервис.</summary>
     internal static Product CreateProduct(
         string article = "OIL-01",
         decimal price = 450m,
         int stock = 10) =>
-        new(
+        ProductRules.Create(
             Guid.NewGuid(),
             article,
             "Масляный фильтр",

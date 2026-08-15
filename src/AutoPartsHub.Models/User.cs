@@ -1,71 +1,40 @@
+using AutoPartsHub.Models.Base;
+
 namespace AutoPartsHub.Models;
 
 /// <summary>
-/// Представляет пользователя AutoParts Hub, связанного с учётной записью Telegram.
+/// Хранит данные пользователя AutoParts Hub, связанного с Telegram.
 /// </summary>
 /// <remarks>
-/// Связи: один пользователь имеет не более одной корзины и может иметь много
-/// автомобилей, заказов, товарных подписок и уведомлений. Обратные коллекции
-/// намеренно не объявлены и настроены в DAL через Fluent API.
+/// Класс намеренно не содержит валидацию и изменение роли: по принятой
+/// слоистой архитектуре модель описывает данные, а правила выполняет BLL.
 /// </remarks>
-public sealed class User
+public class User : Entity
 {
-    /// <summary>
-    /// Создаёт экземпляр пользователя для восстановления Entity Framework Core.
-    /// </summary>
-    private User()
-    {
-    }
+    /// <summary>Получает или задаёт идентификатор чата Telegram.</summary>
+    public long TelegramChatId { get; set; }
 
-    /// <summary>
-    /// Создаёт нового пользователя и проверяет обязательные данные.
-    /// </summary>
-    public User(
-        long telegramChatId,
-        string displayName,
-        UserRole role,
-        DateTimeOffset createdAt)
-    {
-        if (telegramChatId <= 0)
-            throw new DomainException("Telegram chat id должен быть положительным.");
+    /// <summary>Получает или задаёт отображаемое имя.</summary>
+    public string DisplayName { get; set; } = string.Empty;
 
-        Id = Guid.NewGuid();
-        TelegramChatId = telegramChatId;
-        DisplayName = Required(displayName, nameof(displayName), 120);
-        Role = role;
-        CreatedAt = createdAt;
-    }
+    /// <summary>Получает или задаёт роль пользователя.</summary>
+    public UserRole Role { get; set; }
 
-    /// <summary>Получает уникальный идентификатор пользователя.</summary>
-    public Guid Id { get; private set; }
+    /// <summary>Получает или задаёт дату регистрации.</summary>
+    public DateTimeOffset CreatedAt { get; set; }
 
-    /// <summary>Получает идентификатор чата пользователя в Telegram.</summary>
-    public long TelegramChatId { get; private set; }
+    /// <summary>Получает или задаёт корзину по связи один-к-нулю-или-одному.</summary>
+    public Cart? Cart { get; set; }
 
-    /// <summary>Получает отображаемое имя пользователя.</summary>
-    public string DisplayName { get; private set; } = string.Empty;
+    /// <summary>Получает или задаёт автомобили по связи один-ко-многим.</summary>
+    public ICollection<Vehicle> Vehicles { get; set; } = [];
 
-    /// <summary>Получает роль пользователя.</summary>
-    public UserRole Role { get; private set; }
+    /// <summary>Получает или задаёт заказы по связи один-ко-многим.</summary>
+    public ICollection<Order> Orders { get; set; } = [];
 
-    /// <summary>Получает дату и время регистрации пользователя.</summary>
-    public DateTimeOffset CreatedAt { get; private set; }
+    /// <summary>Получает или задаёт товарные подписки по связи один-ко-многим.</summary>
+    public ICollection<ProductSubscription> ProductSubscriptions { get; set; } = [];
 
-    /// <summary>
-    /// Назначает пользователю роль администратора.
-    /// </summary>
-    public void PromoteToAdmin() => Role = UserRole.Admin;
-
-    /// <summary>
-    /// Проверяет обязательную строку, удаляет крайние пробелы и контролирует длину.
-    /// </summary>
-    private static string Required(string value, string name, int maxLength)
-    {
-        var result = value?.Trim();
-        if (string.IsNullOrWhiteSpace(result))
-            throw new DomainException($"Поле {name} обязательно.");
-        if (result.Length > maxLength)
-            throw new DomainException($"Поле {name} не должно превышать {maxLength} символов.");
-        return result;
-    }
+    /// <summary>Получает или задаёт уведомления по связи один-ко-многим.</summary>
+    public ICollection<Notification> Notifications { get; set; } = [];
 }
