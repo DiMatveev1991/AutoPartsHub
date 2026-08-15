@@ -37,22 +37,53 @@
 flowchart TD
     Bot["AutoPartsHub.TelegramBot<br/>PL: команды и Telegram API"] --> BLL["AutoPartsHub.BLL<br/>бизнес-сценарии"]
     Bot --> DAL["AutoPartsHub.DAL<br/>EF Core и PostgreSQL"]
-    BLL --> Core["AutoPartsHub.Core<br/>сущности и интерфейсы"]
-    DAL --> Core
+    Bot --> DTOs["AutoPartsHub.DTOs<br/>запросы и ответы"]
+    BLL --> DAL
+    BLL --> DTOs
+    BLL --> Models["AutoPartsHub.Models<br/>сущности и перечисления"]
+    DAL --> Models
+    DTOs --> Models
     DAL --> DB[(PostgreSQL)]
 ~~~
 
-- **Core** — сущности, перечисления, бизнес-правила и интерфейсы хранилища;
-- **BLL** (Business Logic Layer) — каталог, корзина, заказы, VIN и подписки;
-- **DAL** (Data Access Layer) — `DbContext`, репозиторий и миграции Code First;
-- **TelegramBot** (Presentation Layer) — команды, консольный режим и DI;
+- **Models** — сущности, перечисления и доменные бизнес-правила;
+- **DTOs** — запросы и ответы, которыми обмениваются представление и BLL;
+- **BLL** (Business Logic Layer) — интерфейсы и реализации сценариев каталога,
+  корзины, заказов, VIN и подписок;
+- **DAL** (Data Access Layer) — интерфейсы репозитория, `DbContext`, реализация
+  репозитория и миграции Code First;
+- **TelegramBot** (Presentation Layer) — команды Telegram, консольный режим и
+  реализация канала уведомлений;
 - **Tests** — модульные тесты доменных правил.
+
+Структура повторяет учебный подход из проекта `DeliveryApp`: у BLL и DAL есть
+каталоги `Interfaces`, `Services`/`Repositories` и собственные классы-регистраторы.
+Разница только в слое представления: вместо WPF используется Telegram-бот и
+консоль. `Program.cs` не перечисляет реализации вручную, а последовательно
+подключает `AddDatabase`, `AddBusinessLogic` и `AddBotPresentation`.
+
+В этой учебной слоистой архитектуре BLL зависит от проекта DAL, как в
+`DeliveryApp`, потому что контракты хранилища расположены в `DAL/Interfaces`.
+При этом классы BLL не используют `DbContext`, Npgsql и реализации репозитория —
+только интерфейсы. Поэтому бизнес-сценарии можно тестировать или подключить к
+другому хранилищу, заменив регистрацию DAL. Это намеренное отличие от Clean
+Architecture, где интерфейсы хранилища обычно переносят в Core/Application.
+
+| Каталог | Что находится | Почему именно здесь |
+|---|---|---|
+| `Models` | сущности и enum | доменные правила не зависят от БД и Telegram |
+| `DTOs` | запросы и ответы | наружу не передаются изменяемые EF-сущности |
+| `BLL/Interfaces` | контракты сценариев | Telegram-слой зависит от абстракций |
+| `BLL/Services` | бизнес-сценарии | здесь координируются модели и репозиторий |
+| `BLL/RegistratorServices` | DI-регистрация BLL | `Program` не знает конкретные реализации |
+| `DAL/Interfaces` | контракт репозитория и инфраструктуры | повторяет слоистую схему `DeliveryApp` |
+| `DAL/Context` | `DbContext` и миграции | все детали EF Core собраны вместе |
+| `DAL/Repositories` | запросы к PostgreSQL | BLL не видит реализацию хранения |
+| `DAL/Registrator` | DI-регистрация DAL | строка подключения обрабатывается на границе DAL |
+| `TelegramBot/Registrator` | DI-регистрация представления | lifetimes Telegram и workers не смешаны с BLL |
 
 `DLL` — это файл собранной .NET-библиотеки, а не отдельный архитектурный слой.
 Code First отвечает за создание схемы БД и не заменяет DAL/BLL.
-
-Зависимости направлены просто: BLL и DAL знают только о Core, а TelegramBot
-собирает приложение. DAL не зависит от BLL.
 
 ## Документация исходного кода
 
@@ -66,7 +97,7 @@ Code First отвечает за создание схемы БД и не зам
 `GenerateDocumentationFile` задан централизованно в `Directory.Build.props`, а
 предупреждения считаются ошибками. Благодаря этому новая публичная сущность без
 XML-документации будет обнаружена при обычной сборке. Автоматически созданные EF
-Core файлы в `Persistence/Migrations` вручную не редактируются.
+Core файлы в `Context/Migrations` вручную не редактируются.
 
 ## Запросы и ответы MVP
 
@@ -106,7 +137,7 @@ Core файлы в `Persistence/Migrations` вручную не редактир
 
 Неизвестная команда возвращает: `Неизвестная команда. Используйте /help.`
 
-Допустимые значения состояния товара:Допустимые значения состояния товара: `New`, `Used`, `Refurbished`. Способы
+Допустимые значения состояния товара: `New`, `Used`, `Refurbished`. Способы
 доставки: `Pickup`, `Courier`, `TransportCompany`. Способы оплаты:
 `CardOnline`, `CashOnDelivery`.
 
@@ -116,10 +147,10 @@ Core файлы в `Persistence/Migrations` вручную не редактир
 `ProductCompatibilities`, `Carts`, `CartItems`, `Orders`, `OrderItems`,
 `ProductSubscriptions` и `Notifications`.
 
-Интерфейс `IAutoPartsRepository` находится в Core, а реализация
-`AutoPartsRepository` — в DAL. Поэтому бизнес-логика не связана напрямую с EF
-Core. Цена и название копируются в `OrderItem` при оформлении: старый заказ не
-изменится после обновления каталога.
+Интерфейс `IAutoPartsRepository` находится в `DAL/Interfaces`, а реализация — в
+`DAL/Repositories`. BLL работает с интерфейсом и не обращается к `DbContext`
+напрямую. Цена и название копируются в `OrderItem` при оформлении: старый заказ
+не изменится после обновления каталога.
 
 
 ### Схема конечной базы данных
@@ -279,34 +310,16 @@ erDiagram
 ## Настройка секретов
 
 Реальные пароли и Telegram-токен в репозитории не хранятся.
-`appsettings.json` содержит только несекретные переключатели. Для Docker
-скопируйте шаблон и задайте собственный пароль:
-
-~~~powershell
-Copy-Item .env.example .env
-# Откройте .env и замените CHANGE_ME на собственный пароль.
-docker compose up --build
-~~~
-
-Для Bash:
-
-~~~bash
-cp .env.example .env
-# Откройте .env и замените CHANGE_ME на собственный пароль.
-docker compose up --build
-~~~
-
-Файл `.env` исключён из Git. `.env.example` содержит только названия
-переменных и безопасные заполнители.
+`appsettings.json` содержит только несекретные переключатели. Строка подключения
+и Telegram-токен передаются переменными окружения непосредственно перед запуском.
 
 ## Быстрый запуск в консоли
 
-Требуются .NET SDK 9 и PostgreSQL. Сначала создайте локальный `.env` из
-шаблона, задайте `POSTGRES_PASSWORD` и запустите только PostgreSQL:
+Требуются .NET SDK 9 и установленный PostgreSQL. Создайте пустую базу
+`AutoPartsHub` через pgAdmin или команду `createdb`, затем задайте строку
+подключения:
 
 ~~~powershell
-Copy-Item .env.example .env
-docker compose up -d postgres
 $env:ConnectionStrings__PostgreSQL = "Host=localhost;Port=5432;Database=AutoPartsHub;Username=postgres;Password=ВАШ_ПАРОЛЬ"
 dotnet restore AutoPartsHub.sln
 dotnet run --project src/AutoPartsHub.TelegramBot
@@ -317,7 +330,6 @@ dotnet run --project src/AutoPartsHub.TelegramBot
 добавит три демонстрационных товара. Введите `/start`, затем `/catalog`.
 Команда `/exit` завершает приложение.
 
-## Запуск Telegram-бота
 ## Запуск Telegram-бота
 
 Создайте бота через BotFather и задайте настройки переменными окружения.
@@ -371,7 +383,7 @@ dotnet tool install --global dotnet-ef --version 9.*
 Создать следующую миграцию:
 
 ~~~bash
-dotnet ef migrations add MigrationName --project src/AutoPartsHub.DAL --startup-project src/AutoPartsHub.TelegramBot --output-dir Persistence/Migrations
+dotnet ef migrations add MigrationName --project src/AutoPartsHub.DAL --startup-project src/AutoPartsHub.TelegramBot --output-dir Context/Migrations
 ~~~
 
 Применить миграции вручную:
