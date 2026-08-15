@@ -3,6 +3,10 @@ namespace AutoPartsHub.Core;
 /// <summary>
 /// Представляет товар каталога с ценой, остатком и правилами совместимости.
 /// </summary>
+/// <remarks>
+/// Товар относится к одной категории и является стороной «один» для правил
+/// совместимости, позиций корзин, позиций заказов и товарных подписок.
+/// </remarks>
 public sealed class Product
 {
     private readonly List<ProductCompatibility> _compatibilities = [];
@@ -38,7 +42,7 @@ public sealed class Product
     /// <summary>Получает уникальный идентификатор товара.</summary>
     public Guid Id { get; private set; }
 
-    /// <summary>Получает идентификатор категории товара.</summary>
+    /// <summary>Получает внешний ключ категории; много товаров относится к одной категории.</summary>
     public Guid CategoryId { get; private set; }
 
     /// <summary>Получает нормализованный артикул товара.</summary>
@@ -71,10 +75,10 @@ public sealed class Product
     /// <summary>Получает дату и время последнего изменения товара.</summary>
     public DateTimeOffset UpdatedAt { get; private set; }
 
-    /// <summary>Получает категорию товара при загрузке связи из базы данных.</summary>
+    /// <summary>Получает сторону «один» связи многие-к-одному с категорией.</summary>
     public Category? Category { get; private set; }
 
-    /// <summary>Получает список правил совместимости товара с автомобилями.</summary>
+    /// <summary>Получает сторону «многие» связи один-ко-многим с правилами совместимости.</summary>
     public IReadOnlyCollection<ProductCompatibility> Compatibilities => _compatibilities;
 
     /// <summary>

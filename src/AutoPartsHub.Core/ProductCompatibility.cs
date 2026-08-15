@@ -3,6 +3,9 @@ namespace AutoPartsHub.Core;
 /// <summary>
 /// Представляет правило совместимости товара с конкретным автомобилем.
 /// </summary>
+/// <remarks>
+/// Связь многие-к-одному: много правил совместимости относится к одному товару.
+/// </remarks>
 public sealed class ProductCompatibility
 {
     /// <summary>
@@ -38,7 +41,7 @@ public sealed class ProductCompatibility
     /// <summary>Получает уникальный идентификатор правила совместимости.</summary>
     public Guid Id { get; private set; }
 
-    /// <summary>Получает идентификатор связанного товара.</summary>
+    /// <summary>Получает внешний ключ товара; много правил совместимости относится к одному товару.</summary>
     public Guid ProductId { get; private set; }
 
     /// <summary>Получает марку совместимого автомобиля.</summary>
@@ -56,7 +59,7 @@ public sealed class ProductCompatibility
     /// <summary>Получает обозначение совместимого двигателя.</summary>
     public string? Engine { get; private set; }
 
-    /// <summary>Получает связанный товар при загрузке из базы данных.</summary>
+    /// <summary>Получает сторону «один» связи многие-к-одному с товаром.</summary>
     public Product? Product { get; private set; }
 
     /// <summary>

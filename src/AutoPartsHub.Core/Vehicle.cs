@@ -3,6 +3,10 @@ namespace AutoPartsHub.Core;
 /// <summary>
 /// Описывает автомобиль пользователя, для которого подбираются совместимые запчасти.
 /// </summary>
+/// <remarks>
+/// Связь многие-к-одному: много автомобилей может принадлежать одному
+/// <see cref="User"/>.
+/// </remarks>
 public sealed class Vehicle
 {
     /// <summary>
@@ -34,7 +38,7 @@ public sealed class Vehicle
     /// <summary>Получает уникальный идентификатор автомобиля.</summary>
     public Guid Id { get; private set; }
 
-    /// <summary>Получает идентификатор владельца автомобиля.</summary>
+    /// <summary>Получает внешний ключ владельца; много автомобилей относится к одному пользователю.</summary>
     public Guid UserId { get; private set; }
 
     /// <summary>Получает нормализованный VIN автомобиля.</summary>
@@ -52,7 +56,7 @@ public sealed class Vehicle
     /// <summary>Получает обозначение двигателя, если оно указано.</summary>
     public string? Engine { get; private set; }
 
-    /// <summary>Получает владельца автомобиля при загрузке связи из базы данных.</summary>
+    /// <summary>Получает сторону «один» связи многие-к-одному с пользователем.</summary>
     public User? User { get; private set; }
 
     /// <summary>

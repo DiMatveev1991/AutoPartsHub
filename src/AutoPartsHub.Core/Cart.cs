@@ -3,6 +3,10 @@ namespace AutoPartsHub.Core;
 /// <summary>
 /// Представляет пользовательскую корзину и управляет её позициями.
 /// </summary>
+/// <remarks>
+/// Корзина связана с пользователем один-к-одному и содержит много
+/// <see cref="CartItem"/> по связи один-ко-многим.
+/// </remarks>
 public sealed class Cart
 {
     private readonly List<CartItem> _items = [];
@@ -30,16 +34,16 @@ public sealed class Cart
     /// <summary>Получает уникальный идентификатор корзины.</summary>
     public Guid Id { get; private set; }
 
-    /// <summary>Получает идентификатор владельца корзины.</summary>
+    /// <summary>Получает уникальный внешний ключ пользователя в связи один-к-одному.</summary>
     public Guid UserId { get; private set; }
 
     /// <summary>Получает дату и время последнего изменения корзины.</summary>
     public DateTimeOffset UpdatedAt { get; private set; }
 
-    /// <summary>Получает владельца корзины при загрузке связи из базы данных.</summary>
+    /// <summary>Получает пользователя по связи один-к-одному.</summary>
     public User? User { get; private set; }
 
-    /// <summary>Получает доступный только для чтения список позиций корзины.</summary>
+    /// <summary>Получает сторону «многие» связи один-ко-многим с позициями корзины.</summary>
     public IReadOnlyCollection<CartItem> Items => _items;
 
     /// <summary>

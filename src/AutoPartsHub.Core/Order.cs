@@ -3,6 +3,10 @@ namespace AutoPartsHub.Core;
 /// <summary>
 /// Представляет заказ пользователя, его состав и жизненный цикл.
 /// </summary>
+/// <remarks>
+/// Много заказов относится к одному пользователю; один заказ содержит много
+/// <see cref="OrderItem"/>.
+/// </remarks>
 public sealed class Order
 {
     private readonly List<OrderItem> _items = [];
@@ -47,7 +51,7 @@ public sealed class Order
     /// <summary>Получает уникальный идентификатор заказа.</summary>
     public Guid Id { get; private set; }
 
-    /// <summary>Получает идентификатор владельца заказа.</summary>
+    /// <summary>Получает внешний ключ пользователя; много заказов относится к одному пользователю.</summary>
     public Guid UserId { get; private set; }
 
     /// <summary>Получает человекочитаемый номер заказа.</summary>
@@ -80,10 +84,10 @@ public sealed class Order
     /// <summary>Получает дату и время последнего изменения заказа.</summary>
     public DateTimeOffset UpdatedAt { get; private set; }
 
-    /// <summary>Получает владельца заказа при загрузке связи из базы данных.</summary>
+    /// <summary>Получает сторону «один» связи многие-к-одному с пользователем.</summary>
     public User? User { get; private set; }
 
-    /// <summary>Получает доступный только для чтения состав заказа.</summary>
+    /// <summary>Получает сторону «многие» связи один-ко-многим с позициями заказа.</summary>
     public IReadOnlyCollection<OrderItem> Items => _items;
 
     /// <summary>

@@ -3,6 +3,9 @@ namespace AutoPartsHub.Core;
 /// <summary>
 /// Представляет уведомление пользователя и результат его отправки.
 /// </summary>
+/// <remarks>
+/// Связь многие-к-одному: много уведомлений может принадлежать одному пользователю.
+/// </remarks>
 public sealed class Notification
 {
     /// <summary>
@@ -28,7 +31,7 @@ public sealed class Notification
     /// <summary>Получает уникальный идентификатор уведомления.</summary>
     public Guid Id { get; private set; }
 
-    /// <summary>Получает идентификатор получателя.</summary>
+    /// <summary>Получает внешний ключ пользователя; один пользователь получает много уведомлений.</summary>
     public Guid UserId { get; private set; }
 
     /// <summary>Получает тип уведомления.</summary>
@@ -49,7 +52,7 @@ public sealed class Notification
     /// <summary>Получает описание ошибки последней попытки отправки.</summary>
     public string? Error { get; private set; }
 
-    /// <summary>Получает получателя при загрузке связи из базы данных.</summary>
+    /// <summary>Получает сторону «один» связи многие-к-одному с пользователем.</summary>
     public User? User { get; private set; }
 
     /// <summary>

@@ -3,6 +3,10 @@ namespace AutoPartsHub.Core;
 /// <summary>
 /// Представляет категорию товаров каталога.
 /// </summary>
+/// <remarks>
+/// Связь один-ко-многим: одна категория содержит много товаров. Обратная
+/// коллекция товаров не объявлена и настроена в DAL через Fluent API.
+/// </remarks>
 public sealed class Category
 {
     /// <summary>

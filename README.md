@@ -106,6 +106,161 @@ Core файлы в `Persistence/Migrations` вручную не редактир
 Core. Цена и название копируются в `OrderItem` при оформлении: старый заказ не
 изменится после обновления каталога.
 
+
+### Схема конечной базы данных
+
+Диаграмма соответствует актуальным сущностям, настройкам
+`AutoPartsDbContext` и Code First-миграции. Обозначения: `PK` — первичный
+ключ, `FK` — внешний ключ, `UK` — уникальный ключ.
+
+~~~mermaid
+erDiagram
+    Users {
+        uuid Id PK
+        bigint TelegramChatId UK
+        string DisplayName
+        int Role
+        datetime CreatedAt
+    }
+    Vehicles {
+        uuid Id PK
+        uuid UserId FK
+        string Vin UK
+        string Make
+        string Model
+        int Year
+        string Engine
+    }
+    Categories {
+        uuid Id PK
+        string Name
+        string Slug UK
+    }
+    Products {
+        uuid Id PK
+        uuid CategoryId FK
+        string Article UK
+        string Name
+        string Description
+        int Condition
+        decimal Price
+        int Stock
+        bool IsActive
+        uuid ConcurrencyToken
+        datetime CreatedAt
+        datetime UpdatedAt
+    }
+    ProductCompatibilities {
+        uuid Id PK
+        uuid ProductId FK
+        string Make
+        string Model
+        int YearFrom
+        int YearTo
+        string Engine
+    }
+    Carts {
+        uuid Id PK
+        uuid UserId FK, UK
+        datetime UpdatedAt
+    }
+    CartItems {
+        uuid CartId PK, FK
+        uuid ProductId PK, FK
+        int Quantity
+    }
+    Orders {
+        uuid Id PK
+        uuid UserId FK
+        string OrderNumber UK
+        int Status
+        string ContactName
+        string Phone
+        string DeliveryAddress
+        int DeliveryMethod
+        int PaymentMethod
+        decimal Total
+        datetime CreatedAt
+        datetime UpdatedAt
+    }
+    OrderItems {
+        uuid Id PK
+        uuid OrderId FK
+        uuid ProductId FK
+        string Article
+        string ProductName
+        decimal UnitPrice
+        int Quantity
+    }
+    ProductSubscriptions {
+        uuid Id PK
+        uuid UserId FK
+        uuid ProductId FK
+        int Type
+        decimal TargetPrice
+        bool IsActive
+        datetime CreatedAt
+    }
+    Notifications {
+        uuid Id PK
+        uuid UserId FK
+        string Type
+        string Text
+        int Status
+        datetime CreatedAt
+        datetime SentAt
+        string Error
+    }
+
+    Users ||--o{ Vehicles : "владеет"
+    Users ||--o| Carts : "имеет"
+    Users ||--o{ Orders : "оформляет"
+    Users ||--o{ ProductSubscriptions : "создаёт"
+    Users ||--o{ Notifications : "получает"
+    Categories ||--o{ Products : "содержит"
+    Products ||--o{ ProductCompatibilities : "имеет"
+    Carts ||--o{ CartItems : "содержит"
+    Products ||--o{ CartItems : "добавляется в"
+    Orders ||--o{ OrderItems : "содержит"
+    Products ||--o{ OrderItems : "фиксируется в"
+    Products ||--o{ ProductSubscriptions : "отслеживается"
+~~~
+
+Связи и поведение внешних ключей:
+
+| Родитель → зависимая таблица | Кратность | Удаление |
+|---|---|---|
+| `Users → Vehicles` | один-ко-многим | `Cascade`: автомобили удаляются вместе с пользователем |
+| `Users → Carts` | один-к-нулю-или-одному | `Cascade`: корзина удаляется вместе с пользователем |
+| `Users → Orders` | один-ко-многим | `Restrict`: пользователь с заказами не удаляется |
+| `Users → ProductSubscriptions` | один-ко-многим | `Cascade` |
+| `Users → Notifications` | один-ко-многим | `Cascade` |
+| `Categories → Products` | один-ко-многим | `Restrict`: категория с товарами не удаляется |
+| `Products → ProductCompatibilities` | один-ко-многим | `Cascade` |
+| `Carts → CartItems` | один-ко-многим | `Cascade` |
+| `Products → CartItems` | один-ко-многим | `Restrict` |
+| `Orders → OrderItems` | один-ко-многим | `Cascade` |
+| `Products → OrderItems` | один-ко-многим | `Restrict`: история заказа сохраняет ссылку на товар |
+| `Products → ProductSubscriptions` | один-ко-многим | `Cascade` |
+
+Для товаров применяется мягкое удаление: административная операция вызывает
+`Product.Deactivate()`, устанавливает `Products.IsActive = false` и не
+удаляет строку. Каталог выбирает только активные товары, а резервирование
+дополнительно проверяет `IsActive`. Для остальных сущностей действует
+настроенное в таблице поведение `Cascade` или `Restrict`.
+
+Основные ограничения и индексы:
+
+- уникальны `Users.TelegramChatId`, `Vehicles.Vin`, `Categories.Slug`,
+  `Products.Article`, `Carts.UserId` и `Orders.OrderNumber`;
+- у `CartItems` составной первичный ключ `CartId + ProductId`, поэтому один
+  товар не может дважды появиться отдельными строками в одной корзине;
+- денежные поля хранятся с точностью `numeric(12,2)`;
+- перечисления ролей, статусов, способов доставки и оплаты хранятся как `int`;
+- `Products.ConcurrencyToken` используется EF Core для оптимистичной блокировки;
+- дополнительные составные индексы ускоряют каталог, VIN-подбор, историю
+  заказов, обработку подписок и очередь уведомлений.
+
 ## Быстрый запуск в консоли
 
 Требуются .NET SDK 9 и PostgreSQL. Запустить только PostgreSQL через Docker:

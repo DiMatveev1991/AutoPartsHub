@@ -3,6 +3,10 @@ namespace AutoPartsHub.Core;
 /// <summary>
 /// Представляет подписку пользователя на наличие товара или снижение цены.
 /// </summary>
+/// <remarks>
+/// Каждая подписка относится к одному пользователю и одному товару; со стороны
+/// пользователя и товара это связи один-ко-многим.
+/// </remarks>
 public sealed class ProductSubscription
 {
     /// <summary>
@@ -37,10 +41,10 @@ public sealed class ProductSubscription
     /// <summary>Получает уникальный идентификатор подписки.</summary>
     public Guid Id { get; private set; }
 
-    /// <summary>Получает идентификатор подписанного пользователя.</summary>
+    /// <summary>Получает внешний ключ пользователя; один пользователь имеет много подписок.</summary>
     public Guid UserId { get; private set; }
 
-    /// <summary>Получает идентификатор отслеживаемого товара.</summary>
+    /// <summary>Получает внешний ключ товара; один товар может отслеживаться многими подписками.</summary>
     public Guid ProductId { get; private set; }
 
     /// <summary>Получает тип подписки.</summary>
@@ -55,10 +59,10 @@ public sealed class ProductSubscription
     /// <summary>Получает дату и время создания подписки.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
-    /// <summary>Получает подписанного пользователя при загрузке связи из базы данных.</summary>
+    /// <summary>Получает сторону «один» связи многие-к-одному с пользователем.</summary>
     public User? User { get; private set; }
 
-    /// <summary>Получает отслеживаемый товар при загрузке связи из базы данных.</summary>
+    /// <summary>Получает сторону «один» связи многие-к-одному с товаром.</summary>
     public Product? Product { get; private set; }
 
     /// <summary>

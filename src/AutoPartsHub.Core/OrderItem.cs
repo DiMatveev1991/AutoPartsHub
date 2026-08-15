@@ -3,6 +3,10 @@ namespace AutoPartsHub.Core;
 /// <summary>
 /// Представляет неизменяемый снимок товарной позиции в заказе.
 /// </summary>
+/// <remarks>
+/// Каждая позиция относится к одному заказу и одному исходному товару; обе
+/// связи имеют тип многие-к-одному.
+/// </remarks>
 public sealed class OrderItem
 {
     /// <summary>
@@ -35,10 +39,10 @@ public sealed class OrderItem
     /// <summary>Получает уникальный идентификатор позиции заказа.</summary>
     public Guid Id { get; private set; }
 
-    /// <summary>Получает идентификатор заказа.</summary>
+    /// <summary>Получает внешний ключ заказа; много позиций относится к одному заказу.</summary>
     public Guid OrderId { get; private set; }
 
-    /// <summary>Получает идентификатор исходного товара.</summary>
+    /// <summary>Получает внешний ключ товара; много позиций заказа относится к одному товару.</summary>
     public Guid ProductId { get; private set; }
 
     /// <summary>Получает снимок артикула товара.</summary>
@@ -53,9 +57,9 @@ public sealed class OrderItem
     /// <summary>Получает заказанное количество товара.</summary>
     public int Quantity { get; private set; }
 
-    /// <summary>Получает связанный заказ при загрузке из базы данных.</summary>
+    /// <summary>Получает сторону «один» связи многие-к-одному с заказом.</summary>
     public Order? Order { get; private set; }
 
-    /// <summary>Получает исходный товар при загрузке из базы данных.</summary>
+    /// <summary>Получает сторону «один» связи многие-к-одному с исходным товаром.</summary>
     public Product? Product { get; private set; }
 }
