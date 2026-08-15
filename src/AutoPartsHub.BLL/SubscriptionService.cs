@@ -1,5 +1,5 @@
-using AutoPartsHub.BLL.Contracts;
-using AutoPartsHub.Core;
+using AutoPartsHub.DTOs;
+using AutoPartsHub.Models;
 
 namespace AutoPartsHub.BLL;
 

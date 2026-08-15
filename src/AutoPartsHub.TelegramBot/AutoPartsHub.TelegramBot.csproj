@@ -4,8 +4,9 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\AutoPartsHub.BLL\AutoPartsHub.BLL.csproj" />
-    <ProjectReference Include="..\AutoPartsHub.Core\AutoPartsHub.Core.csproj" />
     <ProjectReference Include="..\AutoPartsHub.DAL\AutoPartsHub.DAL.csproj" />
+    <ProjectReference Include="..\AutoPartsHub.DTOs\AutoPartsHub.DTOs.csproj" />
+    <ProjectReference Include="..\AutoPartsHub.Models\AutoPartsHub.Models.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">

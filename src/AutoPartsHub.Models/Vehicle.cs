@@ -1,4 +1,4 @@
-namespace AutoPartsHub.Core;
+namespace AutoPartsHub.Models;
 
 /// <summary>
 /// Описывает автомобиль пользователя, для которого подбираются совместимые запчасти.

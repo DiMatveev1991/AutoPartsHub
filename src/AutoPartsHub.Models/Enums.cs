@@ -1,4 +1,4 @@
-namespace AutoPartsHub.Core;
+namespace AutoPartsHub.Models;
 
 /// <summary>Определяет роль пользователя в системе.</summary>
 public enum UserRole

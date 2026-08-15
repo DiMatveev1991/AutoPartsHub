@@ -1,4 +1,4 @@
-namespace AutoPartsHub.BLL.Contracts;
+namespace AutoPartsHub.DTOs;
 
 /// <summary>
 /// Представляет одну страницу результатов и сведения о пагинации.

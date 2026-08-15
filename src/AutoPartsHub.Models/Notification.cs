@@ -1,4 +1,4 @@
-namespace AutoPartsHub.Core;
+namespace AutoPartsHub.Models;
 
 /// <summary>
 /// Представляет уведомление пользователя и результат его отправки.

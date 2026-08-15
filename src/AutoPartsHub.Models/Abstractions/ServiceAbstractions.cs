@@ -1,4 +1,4 @@
-namespace AutoPartsHub.Core;
+namespace AutoPartsHub.Models;
 
 /// <summary>
 /// Предоставляет текущее время независимо от системных часов.

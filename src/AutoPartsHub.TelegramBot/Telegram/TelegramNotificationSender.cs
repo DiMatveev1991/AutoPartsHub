@@ -1,4 +1,4 @@
-using AutoPartsHub.Core;
+using AutoPartsHub.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;

@@ -1,4 +1,4 @@
-namespace AutoPartsHub.Core;
+namespace AutoPartsHub.Models;
 
 /// <summary>
 /// Описывает параметры поиска и постраничного вывода товаров.

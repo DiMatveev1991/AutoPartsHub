@@ -1,4 +1,4 @@
-namespace AutoPartsHub.Core;
+namespace AutoPartsHub.Models;
 
 /// <summary>
 /// Представляет пользователя AutoParts Hub, связанного с учётной записью Telegram.

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\AutoPartsHub.Core\AutoPartsHub.Core.csproj" />
+    <ProjectReference Include="..\AutoPartsHub.Models\AutoPartsHub.Models.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" />

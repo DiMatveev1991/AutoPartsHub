@@ -22,7 +22,7 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("AutoPartsHub.Core.Cart", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.Cart", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -42,7 +42,7 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.ToTable("Carts", (string)null);
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.CartItem", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.CartItem", b =>
                 {
                     b.Property<Guid>("CartId")
                         .HasColumnType("uuid");
@@ -60,7 +60,7 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.ToTable("CartItems", (string)null);
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.Category", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.Category", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -84,7 +84,7 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.ToTable("Categories", (string)null);
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.Notification", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.Notification", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -125,7 +125,7 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.ToTable("Notifications", (string)null);
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.Order", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.Order", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -183,7 +183,7 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.ToTable("Orders", (string)null);
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.OrderItem", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.OrderItem", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -221,7 +221,7 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.ToTable("OrderItems", (string)null);
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.Product", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.Product", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -280,7 +280,7 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.ToTable("Products", (string)null);
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.ProductCompatibility", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.ProductCompatibility", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -318,7 +318,7 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.ToTable("ProductCompatibilities", (string)null);
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.ProductSubscription", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.ProductSubscription", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -352,7 +352,7 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.ToTable("ProductSubscriptions", (string)null);
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.User", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -380,7 +380,7 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.ToTable("Users", (string)null);
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.Vehicle", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.Vehicle", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -421,26 +421,26 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.ToTable("Vehicles", (string)null);
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.Cart", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.Cart", b =>
                 {
-                    b.HasOne("AutoPartsHub.Core.User", "User")
+                    b.HasOne("AutoPartsHub.Models.User", "User")
                         .WithOne()
-                        .HasForeignKey("AutoPartsHub.Core.Cart", "UserId")
+                        .HasForeignKey("AutoPartsHub.Models.Cart", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.CartItem", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.CartItem", b =>
                 {
-                    b.HasOne("AutoPartsHub.Core.Cart", "Cart")
+                    b.HasOne("AutoPartsHub.Models.Cart", "Cart")
                         .WithMany("Items")
                         .HasForeignKey("CartId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AutoPartsHub.Core.Product", "Product")
+                    b.HasOne("AutoPartsHub.Models.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -451,9 +451,9 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.Notification", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.Notification", b =>
                 {
-                    b.HasOne("AutoPartsHub.Core.User", "User")
+                    b.HasOne("AutoPartsHub.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -462,9 +462,9 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.Order", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.Order", b =>
                 {
-                    b.HasOne("AutoPartsHub.Core.User", "User")
+                    b.HasOne("AutoPartsHub.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -473,15 +473,15 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.OrderItem", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.OrderItem", b =>
                 {
-                    b.HasOne("AutoPartsHub.Core.Order", "Order")
+                    b.HasOne("AutoPartsHub.Models.Order", "Order")
                         .WithMany("Items")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AutoPartsHub.Core.Product", "Product")
+                    b.HasOne("AutoPartsHub.Models.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -492,9 +492,9 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.Product", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.Product", b =>
                 {
-                    b.HasOne("AutoPartsHub.Core.Category", "Category")
+                    b.HasOne("AutoPartsHub.Models.Category", "Category")
                         .WithMany()
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -503,9 +503,9 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.ProductCompatibility", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.ProductCompatibility", b =>
                 {
-                    b.HasOne("AutoPartsHub.Core.Product", "Product")
+                    b.HasOne("AutoPartsHub.Models.Product", "Product")
                         .WithMany("Compatibilities")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -514,15 +514,15 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.ProductSubscription", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.ProductSubscription", b =>
                 {
-                    b.HasOne("AutoPartsHub.Core.Product", "Product")
+                    b.HasOne("AutoPartsHub.Models.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AutoPartsHub.Core.User", "User")
+                    b.HasOne("AutoPartsHub.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -533,9 +533,9 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.Vehicle", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.Vehicle", b =>
                 {
-                    b.HasOne("AutoPartsHub.Core.User", "User")
+                    b.HasOne("AutoPartsHub.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -544,17 +544,17 @@ namespace AutoPartsHub.DAL.Persistence.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.Cart", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.Cart", b =>
                 {
                     b.Navigation("Items");
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.Order", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.Order", b =>
                 {
                     b.Navigation("Items");
                 });
 
-            modelBuilder.Entity("AutoPartsHub.Core.Product", b =>
+            modelBuilder.Entity("AutoPartsHub.Models.Product", b =>
                 {
                     b.Navigation("Compatibilities");
                 });

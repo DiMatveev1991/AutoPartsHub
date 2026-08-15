@@ -5,7 +5,8 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\AutoPartsHub.BLL\AutoPartsHub.BLL.csproj" />
-    <ProjectReference Include="..\..\src\AutoPartsHub.Core\AutoPartsHub.Core.csproj" />
+    <ProjectReference Include="..\..\src\AutoPartsHub.DTOs\AutoPartsHub.DTOs.csproj" />
+    <ProjectReference Include="..\..\src\AutoPartsHub.Models\AutoPartsHub.Models.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />

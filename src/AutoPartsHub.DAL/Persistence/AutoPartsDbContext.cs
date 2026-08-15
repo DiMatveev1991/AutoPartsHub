@@ -1,4 +1,4 @@
-using AutoPartsHub.Core;
+using AutoPartsHub.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace AutoPartsHub.DAL.Persistence;

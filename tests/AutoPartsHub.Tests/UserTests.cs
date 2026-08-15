@@ -1,4 +1,4 @@
-using AutoPartsHub.Core;
+using AutoPartsHub.Models;
 
 namespace AutoPartsHub.Tests;
 

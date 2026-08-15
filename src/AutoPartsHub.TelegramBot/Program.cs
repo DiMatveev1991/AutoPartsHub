@@ -1,5 +1,5 @@
 using AutoPartsHub.BLL;
-using AutoPartsHub.Core;
+using AutoPartsHub.Models;
 using AutoPartsHub.DAL;
 using AutoPartsHub.TelegramBot;
 using AutoPartsHub.TelegramBot.Background;

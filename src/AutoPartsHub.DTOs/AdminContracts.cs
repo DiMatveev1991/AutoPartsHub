@@ -1,6 +1,6 @@
-using AutoPartsHub.Core;
+using AutoPartsHub.Models;
 
-namespace AutoPartsHub.BLL.Contracts;
+namespace AutoPartsHub.DTOs;
 
 /// <summary>
 /// Содержит правило совместимости при создании или изменении товара.

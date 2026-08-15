@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Text;
 using AutoPartsHub.BLL;
-using AutoPartsHub.BLL.Contracts;
-using AutoPartsHub.Core;
+using AutoPartsHub.DTOs;
+using AutoPartsHub.Models;
 using Microsoft.Extensions.Options;
 
 namespace AutoPartsHub.TelegramBot.Telegram;

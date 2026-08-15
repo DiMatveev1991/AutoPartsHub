@@ -1,6 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\AutoPartsHub.DTOs\AutoPartsHub.DTOs.csproj" />
     <ProjectReference Include="..\AutoPartsHub.Models\AutoPartsHub.Models.csproj" />
   </ItemGroup>
 </Project>
