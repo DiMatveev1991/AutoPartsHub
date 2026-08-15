@@ -10,8 +10,11 @@ namespace AutoPartsHub.BLL.Services;
 /// <summary>
 /// Выполняет пользовательские сценарии поиска и просмотра каталога.
 /// </summary>
-/// <param name="repository">Хранилище данных приложения.</param>
-public sealed class CatalogService(IAutoPartsRepository repository) : ICatalogService
+/// <param name="catalog">Хранилище каталога.</param>
+/// <param name="vehicles">Хранилище автомобилей для VIN-поиска.</param>
+public sealed class CatalogService(
+    ICatalogRepository catalog,
+    IVehicleRepository vehicles) : ICatalogService
 {
     /// <summary>
     /// Возвращает отфильтрованную страницу товаров.
@@ -33,7 +36,7 @@ public sealed class CatalogService(IAutoPartsRepository repository) : ICatalogSe
             filter.Engine,
             filter.Page,
             filter.PageSize);
-        var (items, totalCount) = await repository.SearchProductsAsync(query, cancellationToken);
+        var (items, totalCount) = await catalog.SearchAsync(query, cancellationToken);
         return new PagedResult<ProductDto>(
             items.Select(item => item.ToDto()).ToArray(),
             filter.Page,
@@ -51,7 +54,7 @@ public sealed class CatalogService(IAutoPartsRepository repository) : ICatalogSe
         CancellationToken cancellationToken)
     {
         var normalized = VehicleRules.NormalizeVin(vin);
-        var vehicle = await repository.FindVehicleByVinAsync(normalized, cancellationToken)
+        var vehicle = await vehicles.FindByVinAsync(normalized, cancellationToken)
             ?? throw new NotFoundException(
                 "VIN пока отсутствует в локальном справочнике. Добавьте автомобиль в личном кабинете.");
 
@@ -71,7 +74,7 @@ public sealed class CatalogService(IAutoPartsRepository repository) : ICatalogSe
     /// </summary>
     public async Task<ProductDto> GetAsync(Guid id, CancellationToken cancellationToken)
     {
-        var product = await repository.FindProductAsync(id, cancellationToken)
+        var product = await catalog.FindProductAsync(id, cancellationToken)
             ?? throw new NotFoundException("Товар не найден.");
         return product.ToDto();
     }
@@ -83,7 +86,7 @@ public sealed class CatalogService(IAutoPartsRepository repository) : ICatalogSe
         string article,
         CancellationToken cancellationToken)
     {
-        var product = await repository.FindProductByArticleAsync(
+        var product = await catalog.FindProductByArticleAsync(
             article.Trim().ToUpperInvariant(),
             cancellationToken) ?? throw new NotFoundException("Товар не найден.");
         return product.ToDto();
@@ -95,7 +98,7 @@ public sealed class CatalogService(IAutoPartsRepository repository) : ICatalogSe
     public async Task<IReadOnlyCollection<CategoryDto>> GetCategoriesAsync(
         CancellationToken cancellationToken)
     {
-        var items = await repository.GetCategoriesAsync(cancellationToken);
+        var items = await catalog.GetCategoriesAsync(cancellationToken);
         return items.Select(item => new CategoryDto(item.Id, item.Name, item.Slug)).ToArray();
     }
 

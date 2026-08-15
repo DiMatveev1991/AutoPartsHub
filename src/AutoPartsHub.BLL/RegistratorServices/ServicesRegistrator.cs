@@ -16,7 +16,7 @@ public static class ServicesRegistrator
     {
         // Presentation Layer зависит от интерфейсов, а не создаёт сервисы через
         // new. Это позволяет одинаково использовать BLL из Telegram и консоли.
-        // Scoped выбран из-за Scoped-репозитория и DbContext: одна команда видит
+        // Scoped выбран из-за Scoped-репозиториев и DbContext: одна команда видит
         // один согласованный Unit of Work, но соседние команды не делят контекст.
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<ICatalogService, CatalogService>();

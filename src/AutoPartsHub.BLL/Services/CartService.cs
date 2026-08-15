@@ -10,9 +10,15 @@ namespace AutoPartsHub.BLL.Services;
 /// <summary>
 /// Выполняет операции над пользовательской корзиной.
 /// </summary>
-/// <param name="repository">Хранилище данных приложения.</param>
+/// <param name="carts">Хранилище корзин.</param>
+/// <param name="catalog">Хранилище каталога.</param>
+/// <param name="unitOfWork">Граница сохранения изменений.</param>
 /// <param name="clock">Источник текущего времени.</param>
-public sealed class CartService(IAutoPartsRepository repository, IClock clock) : ICartService
+public sealed class CartService(
+    ICartRepository carts,
+    ICatalogRepository catalog,
+    IUnitOfWork unitOfWork,
+    IClock clock) : ICartService
 {
     /// <summary>
     /// Возвращает корзину пользователя, создавая её при первом обращении.
@@ -22,7 +28,7 @@ public sealed class CartService(IAutoPartsRepository repository, IClock clock) :
         var cart = await GetOrCreateAsync(userId, cancellationToken);
         // Корзина создаётся лениво при первом обращении. Сохранение даёт ей
         // стабильный Id и позволяет уникальному индексу гарантировать одну корзину на пользователя.
-        await repository.SaveChangesAsync(cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return cart.ToDto();
     }
 
@@ -34,11 +40,11 @@ public sealed class CartService(IAutoPartsRepository repository, IClock clock) :
         AddCartItemRequest request,
         CancellationToken cancellationToken)
     {
-        var product = await repository.FindProductAsync(request.ProductId, cancellationToken)
+        var product = await catalog.FindProductAsync(request.ProductId, cancellationToken)
             ?? throw new NotFoundException("Товар не найден.");
         var cart = await GetOrCreateAsync(userId, cancellationToken);
         CartRules.Add(cart, product, request.Quantity, clock.UtcNow);
-        await repository.SaveChangesAsync(cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return cart.ToDto();
     }
 
@@ -51,13 +57,13 @@ public sealed class CartService(IAutoPartsRepository repository, IClock clock) :
         ChangeCartItemRequest request,
         CancellationToken cancellationToken)
     {
-        var cart = await repository.FindCartAsync(userId, cancellationToken)
+        var cart = await carts.FindByUserAsync(userId, cancellationToken)
             ?? throw new NotFoundException("Корзина не найдена.");
-        var product = await repository.FindProductAsync(productId, cancellationToken)
+        var product = await catalog.FindProductAsync(productId, cancellationToken)
             ?? throw new NotFoundException("Товар не найден.");
 
         CartRules.ChangeQuantity(cart, productId, request.Quantity, product.Stock, clock.UtcNow);
-        await repository.SaveChangesAsync(cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return cart.ToDto();
     }
 
@@ -69,10 +75,10 @@ public sealed class CartService(IAutoPartsRepository repository, IClock clock) :
         Guid productId,
         CancellationToken cancellationToken)
     {
-        var cart = await repository.FindCartAsync(userId, cancellationToken)
+        var cart = await carts.FindByUserAsync(userId, cancellationToken)
             ?? throw new NotFoundException("Корзина не найдена.");
         CartRules.Remove(cart, productId, clock.UtcNow);
-        await repository.SaveChangesAsync(cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return cart.ToDto();
     }
 
@@ -81,14 +87,14 @@ public sealed class CartService(IAutoPartsRepository repository, IClock clock) :
     /// </summary>
     private async Task<Cart> GetOrCreateAsync(Guid userId, CancellationToken cancellationToken)
     {
-        var cart = await repository.FindCartAsync(userId, cancellationToken);
+        var cart = await carts.FindByUserAsync(userId, cancellationToken);
         if (cart is not null)
             return cart;
 
         cart = CartRules.Create(userId, clock.UtcNow);
         // AddCartAsync только добавляет сущность в Change Tracker. Транзакционная
         // граница и момент SaveChanges остаются у публичного сценария-вызывателя.
-        await repository.AddCartAsync(cart, cancellationToken);
+        await carts.AddAsync(cart, cancellationToken);
         return cart;
     }
 }

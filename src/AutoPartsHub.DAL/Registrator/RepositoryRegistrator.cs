@@ -14,7 +14,7 @@ namespace AutoPartsHub.DAL.Registrator;
 public static class RepositoryRegistrator
 {
     /// <summary>
-    /// Подключает PostgreSQL, репозиторий и инфраструктурные сервисы AutoParts Hub.
+    /// Подключает PostgreSQL, репозитории и инфраструктурные сервисы AutoParts Hub.
     /// </summary>
     public static IServiceCollection AddDatabase(
         this IServiceCollection services,
@@ -34,11 +34,17 @@ public static class RepositoryRegistrator
                 // Явное указание сборки не даёт EF Core искать их в startup-проекте.
                 npgsql.MigrationsAssembly(typeof(AutoPartsDbContext).Assembly.FullName)));
 
-        // Интерфейс находится в DAL.Interfaces по учебной схеме DeliveryApp.
-        // BLL ссылается только на этот контракт и не использует EF Core, Context
-        // или Repositories. Реализация разделяет lifetime с DbContext и никогда
-        // не переживает scope команды.
-        services.AddScoped<IAutoPartsRepository, AutoPartsRepository>();
+        // Как в DeliveryApp, каждый репозиторий имеет небольшой интерфейс по своей
+        // области. Все реализации Scoped и получают один и тот же Scoped DbContext,
+        // поэтому UnitOfWork сохраняет их изменения атомарно в рамках команды.
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ICatalogRepository, CatalogRepository>();
+        services.AddScoped<ICartRepository, CartRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IVehicleRepository, VehicleRepository>();
+        services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // Реализации не содержат изменяемого состояния: SystemClock читает системное
         // время, а генератор использует локальные значения и Guid, поэтому Singleton безопасен.

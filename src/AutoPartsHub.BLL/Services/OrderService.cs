@@ -10,11 +10,15 @@ namespace AutoPartsHub.BLL.Services;
 /// <summary>
 /// Оформляет заказы и предоставляет пользователю историю покупок.
 /// </summary>
-/// <param name="repository">Хранилище данных приложения.</param>
+/// <param name="carts">Хранилище корзин.</param>
+/// <param name="orders">Хранилище заказов.</param>
+/// <param name="unitOfWork">Граница сохранения и транзакции.</param>
 /// <param name="orderNumbers">Генератор номеров заказов.</param>
 /// <param name="clock">Источник текущего времени.</param>
 public sealed class OrderService(
-    IAutoPartsRepository repository,
+    ICartRepository carts,
+    IOrderRepository orders,
+    IUnitOfWork unitOfWork,
     IOrderNumberGenerator orderNumbers,
     IClock clock) : IOrderService
 {
@@ -25,11 +29,11 @@ public sealed class OrderService(
         Guid userId,
         CheckoutRequest request,
         CancellationToken cancellationToken) =>
-        repository.ExecuteInTransactionAsync(async transactionToken =>
+        unitOfWork.ExecuteInTransactionAsync(async transactionToken =>
         {
             // Загрузка, резервирование остатков, создание заказа и очистка корзины
             // должны завершиться целиком либо быть полностью отменены.
-            var cart = await repository.FindCartAsync(userId, transactionToken);
+            var cart = await carts.FindByUserAsync(userId, transactionToken);
             if (cart is null || cart.Items.Count == 0)
                 throw new DomainException("Нельзя оформить пустую корзину.");
 
@@ -52,9 +56,9 @@ public sealed class OrderService(
                 lines,
                 now);
 
-            await repository.AddOrderAsync(order, transactionToken);
+            await orders.AddAsync(order, transactionToken);
             CartRules.Clear(cart, now);
-            await repository.SaveChangesAsync(transactionToken);
+            await unitOfWork.SaveChangesAsync(transactionToken);
             return order.ToDto();
         }, cancellationToken);
 
@@ -65,8 +69,8 @@ public sealed class OrderService(
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var orders = await repository.GetOrdersAsync(userId, cancellationToken);
-        return orders.Select(order => order.ToDto()).ToArray();
+        var items = await orders.GetAsync(userId, cancellationToken);
+        return items.Select(order => order.ToDto()).ToArray();
     }
 
     /// <summary>
@@ -77,7 +81,7 @@ public sealed class OrderService(
         Guid orderId,
         CancellationToken cancellationToken)
     {
-        var order = await repository.FindOrderAsync(orderId, cancellationToken);
+        var order = await orders.FindAsync(orderId, cancellationToken);
         if (order is null || order.UserId != userId)
             throw new NotFoundException("Заказ не найден.");
         return order.ToDto();
@@ -91,8 +95,8 @@ public sealed class OrderService(
         string orderNumber,
         CancellationToken cancellationToken)
     {
-        var orders = await repository.GetOrdersAsync(userId, cancellationToken);
-        var order = orders.SingleOrDefault(item =>
+        var items = await orders.GetAsync(userId, cancellationToken);
+        var order = items.SingleOrDefault(item =>
             string.Equals(item.OrderNumber, orderNumber.Trim(), StringComparison.OrdinalIgnoreCase))
             ?? throw new NotFoundException("Заказ не найден.");
         return order.ToDto();

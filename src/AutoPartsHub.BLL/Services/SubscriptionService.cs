@@ -10,11 +10,17 @@ namespace AutoPartsHub.BLL.Services;
 /// <summary>
 /// Управляет товарными подписками и доставкой созданных уведомлений.
 /// </summary>
-/// <param name="repository">Хранилище данных приложения.</param>
+/// <param name="catalog">Хранилище каталога.</param>
+/// <param name="subscriptions">Хранилище товарных подписок.</param>
+/// <param name="notifications">Хранилище уведомлений.</param>
+/// <param name="unitOfWork">Граница сохранения изменений.</param>
 /// <param name="notificationSender">Канал отправки уведомлений.</param>
 /// <param name="clock">Источник текущего времени.</param>
 public sealed class SubscriptionService(
-    IAutoPartsRepository repository,
+    ICatalogRepository catalog,
+    ISubscriptionRepository subscriptions,
+    INotificationRepository notifications,
+    IUnitOfWork unitOfWork,
     INotificationSender notificationSender,
     IClock clock) : ISubscriptionService
 {
@@ -26,16 +32,16 @@ public sealed class SubscriptionService(
         SubscribeRequest request,
         CancellationToken cancellationToken)
     {
-        if (await repository.FindProductAsync(request.ProductId, cancellationToken) is null)
+        if (await catalog.FindProductAsync(request.ProductId, cancellationToken) is null)
             throw new NotFoundException("Товар не найден.");
-        if (await repository.ActiveSubscriptionExistsAsync(
+        if (await subscriptions.ActiveExistsAsync(
                 userId,
                 request.ProductId,
                 request.Type,
                 cancellationToken))
             throw new ConflictException("Такая подписка уже существует.");
 
-        await repository.AddSubscriptionAsync(
+        await subscriptions.AddAsync(
             SubscriptionRules.Create(
                 userId,
                 request.ProductId,
@@ -43,7 +49,7 @@ public sealed class SubscriptionService(
                 request.TargetPrice,
                 clock.UtcNow),
             cancellationToken);
-        await repository.SaveChangesAsync(cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>
@@ -53,7 +59,7 @@ public sealed class SubscriptionService(
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var items = await repository.GetNotificationsAsync(userId, cancellationToken);
+        var items = await notifications.GetByUserAsync(userId, cancellationToken);
         return items.Select(item => new NotificationDto(
             item.Id,
             item.Type,
@@ -68,8 +74,8 @@ public sealed class SubscriptionService(
     /// </summary>
     public async Task<int> PrepareTriggeredNotificationsAsync(CancellationToken cancellationToken)
     {
-        var subscriptions = await repository.GetTriggeredSubscriptionsAsync(cancellationToken);
-        foreach (var subscription in subscriptions)
+        var triggered = await subscriptions.GetTriggeredAsync(cancellationToken);
+        foreach (var subscription in triggered)
         {
             var product = subscription.Product
                 ?? throw new InvalidOperationException("Товар подписки не загружен.");
@@ -77,7 +83,7 @@ public sealed class SubscriptionService(
                 ? $"Товар «{product.Name}» ({product.Article}) снова в наличии."
                 : $"Цена товара «{product.Name}» снизилась до {product.Price:F2}.";
 
-            await repository.AddNotificationAsync(
+            await notifications.AddAsync(
                 SubscriptionRules.CreateNotification(
                     subscription.UserId,
                     subscription.Type.ToString(),
@@ -88,9 +94,9 @@ public sealed class SubscriptionService(
         }
 
         // Подписка завершается и уведомление добавляется одним сохранением.
-        if (subscriptions.Count > 0)
-            await repository.SaveChangesAsync(cancellationToken);
-        return subscriptions.Count;
+        if (triggered.Count > 0)
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        return triggered.Count;
     }
 
     /// <summary>
@@ -98,8 +104,8 @@ public sealed class SubscriptionService(
     /// </summary>
     public async Task<int> SendPendingAsync(CancellationToken cancellationToken)
     {
-        var notifications = await repository.GetPendingNotificationsAsync(cancellationToken);
-        foreach (var notification in notifications)
+        var pending = await notifications.GetPendingAsync(cancellationToken);
+        foreach (var notification in pending)
         {
             var user = notification.User
                 ?? throw new InvalidOperationException("Пользователь уведомления не загружен.");
@@ -115,8 +121,8 @@ public sealed class SubscriptionService(
             }
         }
 
-        if (notifications.Count > 0)
-            await repository.SaveChangesAsync(cancellationToken);
-        return notifications.Count;
+        if (pending.Count > 0)
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        return pending.Count;
     }
 }

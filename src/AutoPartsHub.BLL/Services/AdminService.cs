@@ -10,9 +10,17 @@ namespace AutoPartsHub.BLL.Services;
 /// <summary>
 /// Выполняет административные сценарии каталога и заказов.
 /// </summary>
-/// <param name="repository">Хранилище данных приложения.</param>
+/// <param name="catalog">Хранилище каталога.</param>
+/// <param name="orders">Хранилище заказов.</param>
+/// <param name="notifications">Хранилище уведомлений.</param>
+/// <param name="unitOfWork">Граница сохранения изменений.</param>
 /// <param name="clock">Источник текущего времени.</param>
-public sealed class AdminService(IAutoPartsRepository repository, IClock clock) : IAdminService
+public sealed class AdminService(
+    ICatalogRepository catalog,
+    IOrderRepository orders,
+    INotificationRepository notifications,
+    IUnitOfWork unitOfWork,
+    IClock clock) : IAdminService
 {
     /// <summary>
     /// Создаёт новую категорию с уникальным slug.
@@ -21,12 +29,12 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
         CreateCategoryRequest request,
         CancellationToken cancellationToken)
     {
-        if (await repository.CategorySlugExistsAsync(request.Slug.Trim().ToLowerInvariant(), cancellationToken))
+        if (await catalog.CategorySlugExistsAsync(request.Slug.Trim().ToLowerInvariant(), cancellationToken))
             throw new ConflictException("Категория с таким slug уже существует.");
 
         var category = CategoryRules.Create(request.Name, request.Slug);
-        await repository.AddCategoryAsync(category, cancellationToken);
-        await repository.SaveChangesAsync(cancellationToken);
+        await catalog.AddCategoryAsync(category, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return new CategoryDto(category.Id, category.Name, category.Slug);
     }
 
@@ -38,7 +46,7 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
         CancellationToken cancellationToken)
     {
         await RequireCategoryAsync(request.CategoryId, cancellationToken);
-        if (await repository.ProductArticleExistsAsync(request.Article.Trim().ToUpperInvariant(), cancellationToken))
+        if (await catalog.ProductArticleExistsAsync(request.Article.Trim().ToUpperInvariant(), cancellationToken))
             throw new ConflictException("Товар с таким артикулом уже существует.");
 
         var product = ProductRules.Create(
@@ -52,8 +60,8 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
             clock.UtcNow);
         ProductRules.ReplaceCompatibilities(product, request.Compatibilities.Select(ToValues));
 
-        await repository.AddProductAsync(product, cancellationToken);
-        await repository.SaveChangesAsync(cancellationToken);
+        await catalog.AddProductAsync(product, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return product.ToDto();
     }
 
@@ -66,7 +74,7 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
         CancellationToken cancellationToken)
     {
         await RequireCategoryAsync(request.CategoryId, cancellationToken);
-        var product = await repository.FindProductAsync(id, cancellationToken)
+        var product = await catalog.FindProductAsync(id, cancellationToken)
             ?? throw new NotFoundException("Товар не найден.");
 
         ProductRules.Update(
@@ -80,7 +88,7 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
             clock.UtcNow);
         ProductRules.ReplaceCompatibilities(product, request.Compatibilities.Select(ToValues));
 
-        await repository.SaveChangesAsync(cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return product.ToDto();
     }
 
@@ -89,10 +97,10 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
     /// </summary>
     public async Task DeactivateProductAsync(Guid id, CancellationToken cancellationToken)
     {
-        var product = await repository.FindProductAsync(id, cancellationToken)
+        var product = await catalog.FindProductAsync(id, cancellationToken)
             ?? throw new NotFoundException("Товар не найден.");
         ProductRules.Deactivate(product, clock.UtcNow);
-        await repository.SaveChangesAsync(cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>
@@ -101,8 +109,8 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
     public async Task<IReadOnlyCollection<OrderDto>> GetOrdersAsync(
         CancellationToken cancellationToken)
     {
-        var orders = await repository.GetOrdersAsync(null, cancellationToken);
-        return orders.Select(order => order.ToDto()).ToArray();
+        var items = await orders.GetAsync(null, cancellationToken);
+        return items.Select(order => order.ToDto()).ToArray();
     }
 
     /// <summary>
@@ -113,18 +121,18 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
         ChangeOrderStatusRequest request,
         CancellationToken cancellationToken)
     {
-        var order = await repository.FindOrderAsync(id, cancellationToken)
+        var order = await orders.FindAsync(id, cancellationToken)
             ?? throw new NotFoundException("Заказ не найден.");
 
         OrderRules.ChangeStatus(order, request.Status, clock.UtcNow);
-        await repository.AddNotificationAsync(
+        await notifications.AddAsync(
             SubscriptionRules.CreateNotification(
                 order.UserId,
                 "OrderStatusChanged",
                 $"Статус заказа {order.OrderNumber} изменён на {request.Status}.",
                 clock.UtcNow),
             cancellationToken);
-        await repository.SaveChangesAsync(cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return order.ToDto();
     }
 
@@ -133,7 +141,7 @@ public sealed class AdminService(IAutoPartsRepository repository, IClock clock) 
     /// </summary>
     private async Task RequireCategoryAsync(Guid id, CancellationToken cancellationToken)
     {
-        if (await repository.FindCategoryAsync(id, cancellationToken) is null)
+        if (await catalog.FindCategoryAsync(id, cancellationToken) is null)
             throw new NotFoundException("Категория не найдена.");
     }
 

@@ -10,8 +10,11 @@ namespace AutoPartsHub.BLL.Services;
 /// <summary>
 /// Управляет автомобилями пользователя для подбора совместимых товаров.
 /// </summary>
-/// <param name="repository">Хранилище данных приложения.</param>
-public sealed class VehicleService(IAutoPartsRepository repository) : IVehicleService
+/// <param name="vehicles">Хранилище автомобилей.</param>
+/// <param name="unitOfWork">Граница сохранения изменений.</param>
+public sealed class VehicleService(
+    IVehicleRepository vehicles,
+    IUnitOfWork unitOfWork) : IVehicleService
 {
     /// <summary>
     /// Возвращает автомобили указанного пользователя.
@@ -20,8 +23,8 @@ public sealed class VehicleService(IAutoPartsRepository repository) : IVehicleSe
         Guid userId,
         CancellationToken cancellationToken)
     {
-        var vehicles = await repository.GetVehiclesAsync(userId, cancellationToken);
-        return vehicles.Select(ToDto).ToArray();
+        var items = await vehicles.GetByUserAsync(userId, cancellationToken);
+        return items.Select(ToDto).ToArray();
     }
 
     /// <summary>
@@ -33,7 +36,7 @@ public sealed class VehicleService(IAutoPartsRepository repository) : IVehicleSe
         CancellationToken cancellationToken)
     {
         var normalizedVin = VehicleRules.NormalizeVin(request.Vin);
-        if (await repository.FindVehicleByVinAsync(normalizedVin, cancellationToken) is not null)
+        if (await vehicles.FindByVinAsync(normalizedVin, cancellationToken) is not null)
             throw new ConflictException("Автомобиль с таким VIN уже добавлен.");
 
         var vehicle = VehicleRules.Create(
@@ -43,8 +46,8 @@ public sealed class VehicleService(IAutoPartsRepository repository) : IVehicleSe
             request.Model,
             request.Year,
             request.Engine);
-        await repository.AddVehicleAsync(vehicle, cancellationToken);
-        await repository.SaveChangesAsync(cancellationToken);
+        await vehicles.AddAsync(vehicle, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         return ToDto(vehicle);
     }
 
