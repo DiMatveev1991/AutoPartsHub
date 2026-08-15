@@ -18,4 +18,9 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Presentation-компоненты остаются internal для приложения, а тестовый
+         проект проверяет маршрутизацию кнопок без обращения к Telegram API. -->
+    <InternalsVisibleTo Include="AutoPartsHub.Tests" />
+  </ItemGroup>
 </Project>

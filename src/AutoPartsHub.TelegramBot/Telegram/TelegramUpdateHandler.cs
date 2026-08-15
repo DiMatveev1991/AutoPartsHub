@@ -40,10 +40,14 @@ public sealed class TelegramUpdateHandler(
             if (string.IsNullOrWhiteSpace(displayName))
                 displayName = message.From?.Username ?? "Пользователь Telegram";
 
+            // Reply-кнопки Telegram присылают обычный текст. Преобразование выполняется
+            // на границе presentation-слоя, поэтому общий handler и консольный режим
+            // продолжают работать с единым набором slash-команд.
+            var command = TelegramMenu.ResolveCommand(message.Text);
             response = await handler.HandleAsync(
                 message.Chat.Id,
                 displayName,
-                message.Text,
+                command,
                 cancellationToken);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
@@ -57,6 +61,7 @@ public sealed class TelegramUpdateHandler(
         await botClient.SendMessage(
             message.Chat.Id,
             response,
+            replyMarkup: TelegramMenu.CreateMainKeyboard(),
             cancellationToken: cancellationToken);
     }
 

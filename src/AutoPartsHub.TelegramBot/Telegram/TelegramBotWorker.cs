@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
-using Telegram.Bot.Types;
 
 namespace AutoPartsHub.TelegramBot.Telegram;
 
@@ -31,14 +30,7 @@ public sealed class TelegramBotWorker(
 
         var client = new TelegramBotClient(options.Value.BotToken);
         await client.SetMyCommands(
-            [
-                new BotCommand { Command = "catalog", Description = "Показать каталог" },
-                new BotCommand { Command = "find", Description = "Найти деталь" },
-                new BotCommand { Command = "cart", Description = "Открыть корзину" },
-                new BotCommand { Command = "orders", Description = "Мои заказы" },
-                new BotCommand { Command = "status", Description = "Проверить заказ" },
-                new BotCommand { Command = "help", Description = "Справка" }
-            ],
+            TelegramMenu.CreateBotCommands(),
             cancellationToken: stoppingToken);
 
         // DropPendingUpdates защищает от повторного выполнения старых команд после
