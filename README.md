@@ -24,6 +24,11 @@
 В MVP две роли: **Customer** и **Admin**. Остальные роли из полного плана
 площадки не добавлены, потому что они не нужны для защиты выпускного минимума.
 
+| Роль | Функции |
+|---|---|
+| **Customer** | регистрация, каталог и поиск, сохранение автомобиля, VIN-подбор, корзина, оформление и просмотр заказов, подписки и уведомления |
+| **Admin** | все функции покупателя, а также создание категорий и товаров, просмотр всех заказов и изменение их статусов |
+
 ## Архитектура
 
 Проект сделан как модульный монолит из привычных учебных слоёв:
@@ -63,35 +68,45 @@ Code First отвечает за создание схемы БД и не зам
 XML-документации будет обнаружена при обычной сборке. Автоматически созданные EF
 Core файлы в `Persistence/Migrations` вручную не редактируются.
 
-## Команды пользователя
+## Запросы и ответы MVP
 
-| Команда | Назначение |
-|---|---|
-| `/start`, `/help` | регистрация и справка |
-| `/catalog` | первые десять товаров |
-| `/categories` | список категорий |
-| `/find <текст>` | поиск по артикулу или названию |
-| `/vehicle VIN\|Марка\|Модель\|Год\|Двигатель` | сохранить автомобиль |
-| `/vin <VIN>` | подобрать совместимые товары |
-| `/addcart <артикул> <количество>` | добавить товар в корзину |
-| `/cart` | показать корзину |
-| `/remove <артикул>` | удалить товар из корзины |
-| `/checkout Имя\|Телефон\|Адрес\|Courier\|CashOnDelivery` | оформить заказ |
-| `/orders` | история заказов |
-| `/status <номер>` | статус заказа |
-| `/subscribe <артикул> [цена]` | подписка на наличие или цену |
-| `/notifications` | последние уведомления |
+Консоль и Telegram используют один `BotCommandHandler`, поэтому принимают
+одинаковые запросы и возвращают одинаковые ответы. В таблицах приведён основной
+успешный ответ; при ошибке формата или бизнес-правила бот отвечает
+`Ошибка: <описание>`.
 
-Команды администратора:
+### Команды покупателя
 
-| Команда | Назначение |
-|---|---|
-| `/addcategory Название\|slug` | добавить категорию |
-| `/addproduct slug\|артикул\|название\|описание\|New\|цена\|остаток` | добавить товар |
-| `/adminorders` | показать все заказы |
-| `/setstatus НОМЕР\|Shipped` | изменить статус заказа |
+| Запрос | Функция | Основной ответ |
+|---|---|---|
+| `/start` | регистрация при первом обращении и справка | `Добро пожаловать, <имя>!` и список команд |
+| `/help` | показать справку | список доступных пользовательских и административных команд |
+| `/catalog` | первые десять активных товаров | `Товары: <артикул — название, цена, остаток>` или `Каталог пуст.` |
+| `/categories` | список категорий | `Категории: <название (slug)>` или `Категории пока не добавлены.` |
+| `/find <текст>` | поиск по артикулу, названию или описанию | список найденных товаров или `Каталог пуст.` |
+| `/vehicle VIN\|Марка\|Модель\|Год\|Двигатель` | сохранить автомобиль | `Автомобиль сохранён: <марка> <модель>, VIN <VIN>.` |
+| `/vin <VIN>` | подобрать совместимые товары | список товаров или `Для этого автомобиля товары не найдены.` |
+| `/addcart <артикул> <количество>` | добавить товар в корзину | `Товар добавлен.` и актуальное содержимое корзины |
+| `/cart` | показать корзину | позиции, количество, цены и итог либо `Корзина пуста.` |
+| `/remove <артикул>` | удалить позицию | `Товар удалён.` и актуальное содержимое корзины |
+| `/checkout Имя\|Телефон\|Адрес\|Courier\|CashOnDelivery` | оформить заказ | `Заказ <номер> оформлен. Сумма <сумма> ₽, статус <статус>.` |
+| `/orders` | история заказов пользователя | номера, статусы и суммы либо `У вас пока нет заказов.` |
+| `/status <номер>` | статус собственного заказа | `Заказ <номер>: <статус>. Сумма <сумма> ₽.` |
+| `/subscribe <артикул> [цена]` | подписка на наличие или снижение цены | подтверждение подписки на наличие либо целевую цену |
+| `/notifications` | последние уведомления | до десяти сообщений со статусами либо `Уведомлений пока нет.` |
 
-Допустимые значения состояния товара: `New`, `Used`, `Refurbished`. Способы
+### Команды администратора
+
+| Запрос | Функция | Основной ответ |
+|---|---|---|
+| `/addcategory Название\|slug` | создать категорию | `Категория <название> создана.` |
+| `/addproduct slug\|артикул\|название\|описание\|New\|цена\|остаток` | создать товар | `Товар <артикул> создан.` |
+| `/adminorders` | последние заказы всех пользователей | список заказов либо `Заказов пока нет.` |
+| `/setstatus НОМЕР\|Shipped` | изменить статус заказа | `Статус заказа <номер> изменён на <статус>.` |
+
+Неизвестная команда возвращает: `Неизвестная команда. Используйте /help.`
+
+Допустимые значения состояния товара:Допустимые значения состояния товара: `New`, `Used`, `Refurbished`. Способы
 доставки: `Pickup`, `Courier`, `TransportCompany`. Способы оплаты:
 `CardOnline`, `CashOnDelivery`.
 
@@ -261,25 +276,48 @@ erDiagram
 - дополнительные составные индексы ускоряют каталог, VIN-подбор, историю
   заказов, обработку подписок и очередь уведомлений.
 
-## Быстрый запуск в консоли
+## Настройка секретов
 
-Требуются .NET SDK 9 и PostgreSQL. Запустить только PostgreSQL через Docker:
+Реальные пароли и Telegram-токен в репозитории не хранятся.
+`appsettings.json` содержит только несекретные переключатели. Для Docker
+скопируйте шаблон и задайте собственный пароль:
 
-~~~bash
-docker compose up -d postgres
+~~~powershell
+Copy-Item .env.example .env
+# Откройте .env и замените CHANGE_ME на собственный пароль.
+docker compose up --build
 ~~~
 
-Затем:
+Для Bash:
 
 ~~~bash
+cp .env.example .env
+# Откройте .env и замените CHANGE_ME на собственный пароль.
+docker compose up --build
+~~~
+
+Файл `.env` исключён из Git. `.env.example` содержит только названия
+переменных и безопасные заполнители.
+
+## Быстрый запуск в консоли
+
+Требуются .NET SDK 9 и PostgreSQL. Сначала создайте локальный `.env` из
+шаблона, задайте `POSTGRES_PASSWORD` и запустите только PostgreSQL:
+
+~~~powershell
+Copy-Item .env.example .env
+docker compose up -d postgres
+$env:ConnectionStrings__PostgreSQL = "Host=localhost;Port=5432;Database=AutoPartsHub;Username=postgres;Password=ВАШ_ПАРОЛЬ"
 dotnet restore AutoPartsHub.sln
 dotnet run --project src/AutoPartsHub.TelegramBot
 ~~~
 
+В Bash используется та же строка через `export ConnectionStrings__PostgreSQL=...`.
 По умолчанию включён консольный режим. После применения миграции приложение
 добавит три демонстрационных товара. Введите `/start`, затем `/catalog`.
 Команда `/exit` завершает приложение.
 
+## Запуск Telegram-бота
 ## Запуск Telegram-бота
 
 Создайте бота через BotFather и задайте настройки переменными окружения.
@@ -287,7 +325,7 @@ dotnet run --project src/AutoPartsHub.TelegramBot
 PowerShell:
 
 ~~~powershell
-$env:ConnectionStrings__PostgreSQL = "Host=localhost;Port=5432;Database=AutoPartsHub;Username=postgres;Password=YOUR_PASSWORD"
+$env:ConnectionStrings__PostgreSQL = "Host=localhost;Port=5432;Database=AutoPartsHub;Username=postgres;Password=ВАШ_ПАРОЛЬ"
 $env:Telegram__BotToken = "TOKEN_FROM_BOTFATHER"
 $env:Telegram__EnablePolling = "true"
 $env:Telegram__EnableConsole = "false"
@@ -298,7 +336,7 @@ dotnet run --project src/AutoPartsHub.TelegramBot
 Bash:
 
 ~~~bash
-export ConnectionStrings__PostgreSQL='Host=localhost;Port=5432;Database=AutoPartsHub;Username=postgres;Password=YOUR_PASSWORD'
+export ConnectionStrings__PostgreSQL='Host=localhost;Port=5432;Database=AutoPartsHub;Username=postgres;Password=ВАШ_ПАРОЛЬ'
 export Telegram__BotToken='TOKEN_FROM_BOTFATHER'
 export Telegram__EnablePolling='true'
 export Telegram__EnableConsole='false'
@@ -310,6 +348,19 @@ dotnet run --project src/AutoPartsHub.TelegramBot
 добавили позже, роль обновится при следующем сообщении.
 
 ## Миграции EF Core
+
+Design-time фабрика также не содержит пароля. Перед командами `dotnet ef`
+задайте строку подключения в переменной окружения:
+
+~~~powershell
+$env:AUTOPARTS_DB_CONNECTION_STRING = "Host=localhost;Port=5432;Database=AutoPartsHub;Username=postgres;Password=ВАШ_ПАРОЛЬ"
+~~~
+
+Для Bash:
+
+~~~bash
+export AUTOPARTS_DB_CONNECTION_STRING='Host=localhost;Port=5432;Database=AutoPartsHub;Username=postgres;Password=ВАШ_ПАРОЛЬ'
+~~~
 
 Установить инструмент:
 

@@ -2,15 +2,15 @@ services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: AutoPartsHub
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-AutoPartsHub}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     ports:
       - "5432:5432"
     volumes:
       - autoparts-postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d AutoPartsHub"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -20,9 +20,9 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      ConnectionStrings__PostgreSQL: Host=postgres;Port=5432;Database=AutoPartsHub;Username=postgres;Password=postgres
+      ConnectionStrings__PostgreSQL: Host=postgres;Port=5432;Database=${POSTGRES_DB:-AutoPartsHub};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
       Telegram__BotToken: ${TELEGRAM_BOT_TOKEN:-}
-      Telegram__EnablePolling: ${TELEGRAM_ENABLE_POLLING:-true}
+      Telegram__EnablePolling: ${TELEGRAM_ENABLE_POLLING:-false}
       Telegram__EnableConsole: "false"
       Telegram__AdminChatIds__0: ${TELEGRAM_ADMIN_CHAT_ID:-0}
     depends_on:
