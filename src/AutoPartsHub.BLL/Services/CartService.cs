@@ -1,14 +1,17 @@
+using AutoPartsHub.BLL;
 using AutoPartsHub.DTOs;
 using AutoPartsHub.Models;
+using AutoPartsHub.BLL.Interfaces;
+using AutoPartsHub.DAL.Interfaces;
 
-namespace AutoPartsHub.BLL;
+namespace AutoPartsHub.BLL.Services;
 
 /// <summary>
 /// Выполняет операции над пользовательской корзиной.
 /// </summary>
 /// <param name="repository">Хранилище данных приложения.</param>
 /// <param name="clock">Источник текущего времени.</param>
-public sealed class CartService(IAutoPartsRepository repository, IClock clock)
+public sealed class CartService(IAutoPartsRepository repository, IClock clock) : ICartService
 {
     /// <summary>
     /// Возвращает корзину пользователя, создавая её при первом обращении.

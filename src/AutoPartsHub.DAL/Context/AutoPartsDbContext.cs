@@ -1,7 +1,7 @@
 using AutoPartsHub.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace AutoPartsHub.DAL.Persistence;
+namespace AutoPartsHub.DAL.Context;
 
 /// <summary>
 /// Представляет сеанс Entity Framework Core для базы данных AutoParts Hub.

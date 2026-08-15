@@ -1,4 +1,4 @@
-using AutoPartsHub.BLL;
+using AutoPartsHub.BLL.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -45,11 +45,11 @@ public sealed class NotificationWorker(
     /// </summary>
     private async Task ProcessAsync(CancellationToken cancellationToken)
     {
-        // BackgroundService является Singleton, а SubscriptionService использует
+        // BackgroundService является Singleton, а ISubscriptionService использует
         // Scoped DbContext. Новый scope на цикл исключает совместное использование
         // контекста между итерациями и гарантирует его освобождение.
         await using var scope = scopeFactory.CreateAsyncScope();
-        var service = scope.ServiceProvider.GetRequiredService<SubscriptionService>();
+        var service = scope.ServiceProvider.GetRequiredService<ISubscriptionService>();
         var created = await service.PrepareTriggeredNotificationsAsync(cancellationToken);
         var sent = await service.SendPendingAsync(cancellationToken);
         if (created > 0 || sent > 0)

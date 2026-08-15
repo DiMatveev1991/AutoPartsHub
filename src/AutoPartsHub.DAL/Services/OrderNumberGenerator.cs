@@ -1,6 +1,6 @@
-using AutoPartsHub.Models;
+using AutoPartsHub.DAL.Interfaces;
 
-namespace AutoPartsHub.DAL;
+namespace AutoPartsHub.DAL.Services;
 
 /// <summary>
 /// Формирует номера заказов из даты и короткого случайного идентификатора.

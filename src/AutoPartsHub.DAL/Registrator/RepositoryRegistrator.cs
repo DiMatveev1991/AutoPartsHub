@@ -1,23 +1,27 @@
-using AutoPartsHub.Models;
-using AutoPartsHub.DAL.Persistence;
+using AutoPartsHub.DAL.Context;
+using AutoPartsHub.DAL.Interfaces;
+using AutoPartsHub.DAL.Repositories;
+using AutoPartsHub.DAL.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AutoPartsHub.DAL;
+namespace AutoPartsHub.DAL.Registrator;
 
 /// <summary>
 /// Регистрирует зависимости слоя доступа к данным.
 /// </summary>
-public static class DependencyInjection
+public static class RepositoryRegistrator
 {
     /// <summary>
     /// Подключает PostgreSQL, репозиторий и инфраструктурные сервисы AutoParts Hub.
     /// </summary>
-    public static IServiceCollection AddAutoPartsHubDal(
+    public static IServiceCollection AddDatabase(
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // DAL получает строку подключения на границе приложения. Ни BLL, ни
+        // Telegram-обработчики не знают имя ключа и не работают с IConfiguration.
         var connectionString = configuration.GetConnectionString("PostgreSQL")
             ?? throw new InvalidOperationException(
                 "Не задана строка подключения ConnectionStrings:PostgreSQL.");
@@ -30,7 +34,10 @@ public static class DependencyInjection
                 // Явное указание сборки не даёт EF Core искать их в startup-проекте.
                 npgsql.MigrationsAssembly(typeof(AutoPartsDbContext).Assembly.FullName)));
 
-        // Репозиторий разделяет lifetime с DbContext и никогда не переживает scope команды.
+        // Интерфейс находится в DAL.Interfaces по учебной схеме DeliveryApp.
+        // BLL ссылается только на этот контракт и не использует EF Core, Context
+        // или Repositories. Реализация разделяет lifetime с DbContext и никогда
+        // не переживает scope команды.
         services.AddScoped<IAutoPartsRepository, AutoPartsRepository>();
 
         // Реализации не содержат изменяемого состояния: SystemClock читает системное

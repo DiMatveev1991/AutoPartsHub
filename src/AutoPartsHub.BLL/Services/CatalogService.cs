@@ -1,13 +1,16 @@
+using AutoPartsHub.BLL;
 using AutoPartsHub.DTOs;
 using AutoPartsHub.Models;
+using AutoPartsHub.BLL.Interfaces;
+using AutoPartsHub.DAL.Interfaces;
 
-namespace AutoPartsHub.BLL;
+namespace AutoPartsHub.BLL.Services;
 
 /// <summary>
 /// Выполняет пользовательские сценарии поиска и просмотра каталога.
 /// </summary>
 /// <param name="repository">Хранилище данных приложения.</param>
-public sealed class CatalogService(IAutoPartsRepository repository)
+public sealed class CatalogService(IAutoPartsRepository repository) : ICatalogService
 {
     /// <summary>
     /// Возвращает отфильтрованную страницу товаров.

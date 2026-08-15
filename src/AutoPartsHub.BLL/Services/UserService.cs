@@ -1,14 +1,17 @@
+using AutoPartsHub.BLL;
 using AutoPartsHub.DTOs;
 using AutoPartsHub.Models;
+using AutoPartsHub.BLL.Interfaces;
+using AutoPartsHub.DAL.Interfaces;
 
-namespace AutoPartsHub.BLL;
+namespace AutoPartsHub.BLL.Services;
 
 /// <summary>
 /// Регистрирует пользователей Telegram и поддерживает их роли.
 /// </summary>
 /// <param name="repository">Хранилище данных приложения.</param>
 /// <param name="clock">Источник текущего времени.</param>
-public sealed class UserService(IAutoPartsRepository repository, IClock clock)
+public sealed class UserService(IAutoPartsRepository repository, IClock clock) : IUserService
 {
     /// <summary>
     /// Возвращает существующего пользователя или регистрирует его при первом обращении.

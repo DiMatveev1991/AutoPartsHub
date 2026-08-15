@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace AutoPartsHub.DAL.Persistence.Migrations
+namespace AutoPartsHub.DAL.Context.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration

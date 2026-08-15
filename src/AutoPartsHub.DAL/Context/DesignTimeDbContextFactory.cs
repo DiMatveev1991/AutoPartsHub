@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace AutoPartsHub.DAL.Persistence;
+namespace AutoPartsHub.DAL.Context;
 
 /// <summary>
 /// Создаёт контекст базы данных для команд <c>dotnet ef</c>.

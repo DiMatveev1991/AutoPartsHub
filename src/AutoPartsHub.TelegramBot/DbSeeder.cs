@@ -1,5 +1,6 @@
 using AutoPartsHub.Models;
-using AutoPartsHub.DAL.Persistence;
+using AutoPartsHub.DAL.Context;
+using AutoPartsHub.DAL.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,7 +28,7 @@ public static class DbSeeder
         var db = scope.ServiceProvider.GetRequiredService<AutoPartsDbContext>();
         var clock = scope.ServiceProvider.GetRequiredService<IClock>();
 
-        // Автомиграции удобны для учебного проекта и локального Docker-запуска.
+        // Автомиграции удобны для учебного проекта и локального запуска.
         // В окружении с отдельным этапом деплоя их можно отключить настройкой
         // Database:ApplyMigrationsOnStartup и выполнить через dotnet ef заранее.
         if (configuration.GetValue("Database:ApplyMigrationsOnStartup", true))

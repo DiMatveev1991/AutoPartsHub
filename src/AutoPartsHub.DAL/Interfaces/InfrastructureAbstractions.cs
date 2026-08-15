@@ -1,4 +1,4 @@
-namespace AutoPartsHub.Models;
+namespace AutoPartsHub.DAL.Interfaces;
 
 /// <summary>
 /// Предоставляет текущее время независимо от системных часов.
@@ -18,15 +18,4 @@ public interface IOrderNumberGenerator
     /// Формирует следующий номер заказа для указанного момента времени.
     /// </summary>
     string Next(DateTimeOffset now);
-}
-
-/// <summary>
-/// Отправляет подготовленные уведомления пользователям.
-/// </summary>
-public interface INotificationSender
-{
-    /// <summary>
-    /// Отправляет пользователю одно уведомление.
-    /// </summary>
-    Task SendAsync(User user, Notification notification, CancellationToken cancellationToken);
 }

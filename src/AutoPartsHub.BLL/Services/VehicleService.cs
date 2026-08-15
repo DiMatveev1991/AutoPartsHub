@@ -1,13 +1,16 @@
+using AutoPartsHub.BLL;
 using AutoPartsHub.DTOs;
 using AutoPartsHub.Models;
+using AutoPartsHub.BLL.Interfaces;
+using AutoPartsHub.DAL.Interfaces;
 
-namespace AutoPartsHub.BLL;
+namespace AutoPartsHub.BLL.Services;
 
 /// <summary>
 /// Управляет автомобилями пользователя для подбора совместимых товаров.
 /// </summary>
 /// <param name="repository">Хранилище данных приложения.</param>
-public sealed class VehicleService(IAutoPartsRepository repository)
+public sealed class VehicleService(IAutoPartsRepository repository) : IVehicleService
 {
     /// <summary>
     /// Возвращает автомобили указанного пользователя.

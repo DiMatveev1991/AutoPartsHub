@@ -1,9 +1,7 @@
-using AutoPartsHub.BLL;
-using AutoPartsHub.Models;
-using AutoPartsHub.DAL;
+using AutoPartsHub.BLL.RegistratorServices;
+using AutoPartsHub.DAL.Registrator;
 using AutoPartsHub.TelegramBot;
-using AutoPartsHub.TelegramBot.Background;
-using AutoPartsHub.TelegramBot.Telegram;
+using AutoPartsHub.TelegramBot.Registrator;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -12,40 +10,15 @@ using Microsoft.Extensions.Logging;
 // аргументов запуска, а также настраивает логирование и корректное завершение.
 var builder = Host.CreateApplicationBuilder(args);
 
-// DAL скрывает настройку Npgsql и регистрирует DbContext как Scoped: один
-// контекст используется в рамках одной команды, но не разделяется между потоками.
-builder.Services.AddAutoPartsHubDal(builder.Configuration);
-
-// Настройки привязываются через Options pattern, чтобы классы Telegram-слоя
-// не зависели напрямую от IConfiguration и строковых ключей.
-builder.Services.Configure<TelegramOptions>(
-    builder.Configuration.GetSection(TelegramOptions.SectionName));
-
-// Бизнес-сервисы и обработчик команд имеют Scoped lifetime, потому что они
-// используют Scoped-репозиторий и DbContext. Отдельный scope создаётся для
-// каждой Telegram-команды, консольной команды и итерации фоновой обработки.
-builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<CatalogService>();
-builder.Services.AddScoped<CartService>();
-builder.Services.AddScoped<OrderService>();
-builder.Services.AddScoped<AdminService>();
-builder.Services.AddScoped<VehicleService>();
-builder.Services.AddScoped<SubscriptionService>();
-builder.Services.AddScoped<BotCommandHandler>();
-
-// Отправщик не хранит изменяемого состояния и зависит только от потокобезопасных
-// IOptions и ILogger, поэтому один Singleton-экземпляр безопасно переиспользуется.
-builder.Services.AddSingleton<INotificationSender, TelegramNotificationSender>();
-
-// Telegram.Bot переиспользует один callback-обработчик. Сам обработчик не хранит
-// DbContext: на каждое обновление он создаёт новый scope, поэтому Singleton безопасен.
-builder.Services.AddSingleton<TelegramUpdateHandler>();
-
-// Hosted services сами являются Singleton. Scoped-зависимости нельзя захватывать
-// в их конструкторах, поэтому внутри workers используется IServiceScopeFactory.
-builder.Services.AddHostedService<TelegramBotWorker>();
-builder.Services.AddHostedService<ConsoleBotWorker>();
-builder.Services.AddHostedService<NotificationWorker>();
+// Как и в DeliveryApp, каждый слой сам знает, какие его реализации нужно
+// зарегистрировать. Program остаётся composition root: он определяет только
+// порядок сборки приложения и не знает конкретные классы репозиториев и сервисов.
+// Порядок отражает направление зависимостей для чтения кода: сначала хранилище,
+// затем использующая его бизнес-логика, после этого внешний интерфейс бота.
+builder.Services
+    .AddDatabase(builder.Configuration)
+    .AddBusinessLogic()
+    .AddBotPresentation(builder.Configuration);
 
 var host = builder.Build();
 

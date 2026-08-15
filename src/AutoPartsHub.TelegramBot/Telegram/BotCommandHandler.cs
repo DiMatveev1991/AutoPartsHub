@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using AutoPartsHub.BLL;
+using AutoPartsHub.BLL.Interfaces;
 using AutoPartsHub.DTOs;
 using AutoPartsHub.Models;
 using Microsoft.Extensions.Options;
@@ -19,13 +20,13 @@ namespace AutoPartsHub.TelegramBot.Telegram;
 /// <param name="admin">Административный сервис.</param>
 /// <param name="options">Настройки Telegram.</param>
 public sealed class BotCommandHandler(
-    UserService users,
-    CatalogService catalog,
-    CartService carts,
-    OrderService orders,
-    VehicleService vehicles,
-    SubscriptionService subscriptions,
-    AdminService admin,
+    IUserService users,
+    ICatalogService catalog,
+    ICartService carts,
+    IOrderService orders,
+    IVehicleService vehicles,
+    ISubscriptionService subscriptions,
+    IAdminService admin,
     IOptions<TelegramOptions> options)
 {
     /// <summary>

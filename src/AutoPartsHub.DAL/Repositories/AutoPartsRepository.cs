@@ -1,8 +1,10 @@
 using AutoPartsHub.Models;
+using AutoPartsHub.DAL.Context;
+using AutoPartsHub.DAL.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
-namespace AutoPartsHub.DAL.Persistence;
+namespace AutoPartsHub.DAL.Repositories;
 
 /// <summary>
 /// Реализует доступ к данным AutoParts Hub через Entity Framework Core и PostgreSQL.

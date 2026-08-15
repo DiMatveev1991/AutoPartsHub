@@ -1,6 +1,6 @@
-using AutoPartsHub.Models;
+using AutoPartsHub.DAL.Interfaces;
 
-namespace AutoPartsHub.DAL;
+namespace AutoPartsHub.DAL.Services;
 
 /// <summary>
 /// Предоставляет текущее системное время в UTC.

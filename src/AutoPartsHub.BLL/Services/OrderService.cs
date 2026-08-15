@@ -1,7 +1,10 @@
+using AutoPartsHub.BLL;
 using AutoPartsHub.DTOs;
 using AutoPartsHub.Models;
+using AutoPartsHub.BLL.Interfaces;
+using AutoPartsHub.DAL.Interfaces;
 
-namespace AutoPartsHub.BLL;
+namespace AutoPartsHub.BLL.Services;
 
 /// <summary>
 /// Оформляет заказы и предоставляет пользователю историю покупок.
@@ -12,7 +15,7 @@ namespace AutoPartsHub.BLL;
 public sealed class OrderService(
     IAutoPartsRepository repository,
     IOrderNumberGenerator orderNumbers,
-    IClock clock)
+    IClock clock) : IOrderService
 {
     /// <summary>
     /// Оформляет содержимое корзины как заказ в одной транзакции.

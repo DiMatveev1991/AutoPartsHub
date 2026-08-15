@@ -4,6 +4,9 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <!-- Явная версия Relational передаётся через ProjectReference в BLL и не даёт
+         Npgsql выбрать минимально допустимую 9.0.1 вместо общей версии 9.0.19. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

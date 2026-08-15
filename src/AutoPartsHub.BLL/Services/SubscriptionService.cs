@@ -1,7 +1,10 @@
+using AutoPartsHub.BLL;
 using AutoPartsHub.DTOs;
 using AutoPartsHub.Models;
+using AutoPartsHub.BLL.Interfaces;
+using AutoPartsHub.DAL.Interfaces;
 
-namespace AutoPartsHub.BLL;
+namespace AutoPartsHub.BLL.Services;
 
 /// <summary>
 /// Управляет товарными подписками и доставкой созданных уведомлений.
@@ -12,7 +15,7 @@ namespace AutoPartsHub.BLL;
 public sealed class SubscriptionService(
     IAutoPartsRepository repository,
     INotificationSender notificationSender,
-    IClock clock)
+    IClock clock) : ISubscriptionService
 {
     /// <summary>
     /// Создаёт уникальную активную подписку пользователя на товар.

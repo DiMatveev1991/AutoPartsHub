@@ -1,14 +1,17 @@
+using AutoPartsHub.BLL;
 using AutoPartsHub.DTOs;
 using AutoPartsHub.Models;
+using AutoPartsHub.BLL.Interfaces;
+using AutoPartsHub.DAL.Interfaces;
 
-namespace AutoPartsHub.BLL;
+namespace AutoPartsHub.BLL.Services;
 
 /// <summary>
 /// Выполняет административные сценарии каталога и заказов.
 /// </summary>
 /// <param name="repository">Хранилище данных приложения.</param>
 /// <param name="clock">Источник текущего времени.</param>
-public sealed class AdminService(IAutoPartsRepository repository, IClock clock)
+public sealed class AdminService(IAutoPartsRepository repository, IClock clock) : IAdminService
 {
     /// <summary>
     /// Создаёт новую категорию с уникальным slug.
