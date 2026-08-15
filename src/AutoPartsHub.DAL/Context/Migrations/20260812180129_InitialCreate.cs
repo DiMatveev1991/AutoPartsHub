@@ -5,10 +5,16 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace AutoPartsHub.DAL.Context.Migrations
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// Первая миграция EF Core, создающая исходную схему базы данных AutoPartsHub.
+    /// Файл является историей схемы, поэтому бизнес-правила в него не помещаются.
+    /// </summary>
     public partial class InitialCreate : Migration
     {
-        /// <inheritdoc />
+        /// <summary>
+        /// Создаёт таблицы, внешние ключи и индексы исходной схемы при применении миграции.
+        /// Порядок операций сгенерирован EF Core с учётом зависимостей между таблицами.
+        /// </summary>
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -369,7 +375,10 @@ namespace AutoPartsHub.DAL.Context.Migrations
                 unique: true);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Удаляет объекты исходной схемы в обратном порядке при откате миграции.
+        /// Зависимые таблицы удаляются первыми, чтобы не нарушить ограничения внешних ключей.
+        /// </summary>
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(

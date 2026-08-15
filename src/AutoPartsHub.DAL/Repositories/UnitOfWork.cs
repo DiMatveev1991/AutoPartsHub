@@ -8,7 +8,10 @@ namespace AutoPartsHub.DAL.Repositories;
 /// <summary>Реализует общую границу сохранения для scoped DbContext.</summary>
 internal sealed class UnitOfWork(AutoPartsDbContext db) : IUnitOfWork
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// Сохраняет все накопленные изменения scoped DbContext одной операцией и переводит ошибки инфраструктуры
+    /// в исключения DAL, чтобы BLL не зависел от типов EF Core и конкретной СУБД.
+    /// </summary>
     public async Task SaveChangesAsync(CancellationToken cancellationToken)
     {
         try
@@ -33,7 +36,10 @@ internal sealed class UnitOfWork(AutoPartsDbContext db) : IUnitOfWork
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Выполняет переданный бизнес-сценарий и его сохранение в одной транзакции базы данных.
+    /// Метод нужен для атомарных операций вроде checkout: заказ, остатки и корзина либо изменяются вместе, либо откатываются вместе.
+    /// </summary>
     public async Task<T> ExecuteInTransactionAsync<T>(
         Func<CancellationToken, Task<T>> action,
         CancellationToken cancellationToken)

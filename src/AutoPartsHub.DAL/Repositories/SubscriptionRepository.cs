@@ -8,7 +8,10 @@ namespace AutoPartsHub.DAL.Repositories;
 /// <summary>Реализует хранение товарных подписок через EF Core.</summary>
 internal sealed class SubscriptionRepository(AutoPartsDbContext db) : ISubscriptionRepository
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// Проверяет существование активной подписки пользователя на товар и событие без загрузки сущности.
+    /// Такой запрос предотвращает дубли на уровне бизнес-сценария, а ограничение базы данных защищает от гонок.
+    /// </summary>
     public Task<bool> ActiveExistsAsync(
         Guid userId,
         Guid productId,
@@ -21,13 +24,19 @@ internal sealed class SubscriptionRepository(AutoPartsDbContext db) : ISubscript
                     item.IsActive,
             cancellationToken);
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Добавляет подписку в Change Tracker, оставляя сохранение вызывающему Unit of Work.
+    /// Репозиторий не задаёт транзакционную границу и поэтому остаётся переиспользуемым в разных сценариях.
+    /// </summary>
     public async Task AddAsync(
         ProductSubscription subscription,
         CancellationToken cancellationToken) =>
         await db.ProductSubscriptions.AddAsync(subscription, cancellationToken);
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Находит активные подписки, условия которых уже выполнены, и загружает связанный товар.
+    /// Результат отслеживается: после формирования уведомления BLL деактивирует обработанную подписку.
+    /// </summary>
     public async Task<IReadOnlyCollection<ProductSubscription>> GetTriggeredAsync(
         CancellationToken cancellationToken) =>
         // Условие повторяет SubscriptionRules из BLL в форме, переводимой в SQL.

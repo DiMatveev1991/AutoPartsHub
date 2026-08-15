@@ -15,7 +15,10 @@ namespace AutoPartsHub.DAL.Context.Migrations
     [Migration("20260812180129_InitialCreate")]
     partial class InitialCreate
     {
-        /// <inheritdoc />
+        /// <summary>
+        /// Восстанавливает целевую модель данной миграции для сравнения схем EF Core.
+        /// Метод сгенерирован инструментами миграций и не содержит прикладной логики.
+        /// </summary>
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618

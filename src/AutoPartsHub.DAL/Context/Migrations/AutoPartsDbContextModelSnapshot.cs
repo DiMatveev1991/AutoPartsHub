@@ -13,6 +13,10 @@ namespace AutoPartsHub.DAL.Context.Migrations
     [DbContext(typeof(AutoPartsDbContext))]
     partial class AutoPartsDbContextModelSnapshot : ModelSnapshot
     {
+        /// <summary>
+        /// Собирает актуальный снимок модели, с которым EF Core сравнивает будущие изменения схемы.
+        /// Код сгенерирован инструментами миграций и отражает конфигурацию DbContext, а не бизнес-правила.
+        /// </summary>
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618

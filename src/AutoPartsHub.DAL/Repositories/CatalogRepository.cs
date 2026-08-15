@@ -8,7 +8,10 @@ namespace AutoPartsHub.DAL.Repositories;
 /// <summary>Реализует запросы каталога через EF Core.</summary>
 internal sealed class CatalogRepository(AutoPartsDbContext db) : ICatalogRepository
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// Строит серверный запрос каталога из уже проверенных BLL фильтров и возвращает страницу вместе с общим числом совпадений.
+    /// Чтение выполняется без отслеживания, потому что результат предназначен только для показа пользователю.
+    /// </summary>
     public async Task<(IReadOnlyCollection<Product> Items, int TotalCount)> SearchAsync(
         ProductSearchQuery filter,
         CancellationToken cancellationToken)
@@ -74,7 +77,10 @@ internal sealed class CatalogRepository(AutoPartsDbContext db) : ICatalogReposit
         return (items, totalCount);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Находит товар по идентификатору вместе с категорией и совместимостью с автомобилями.
+    /// Сущность остаётся отслеживаемой, поскольку вызывающий сценарий может изменить остаток или добавить товар в связанный граф.
+    /// </summary>
     public Task<Product?> FindProductAsync(Guid id, CancellationToken cancellationToken) =>
         // Сущность остаётся tracked: корзина, checkout и администрирование могут
         // изменить её и сохранить через общую единицу работы.
@@ -84,7 +90,10 @@ internal sealed class CatalogRepository(AutoPartsDbContext db) : ICatalogReposit
             .AsSplitQuery()
             .SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Находит товар по нормализованному артикулу и загружает данные, необходимые для карточки товара.
+    /// Поиск по артикулу централизован в DAL, чтобы BLL не зависел от EF Core и структуры таблиц.
+    /// </summary>
     public Task<Product?> FindProductByArticleAsync(
         string article,
         CancellationToken cancellationToken) =>
@@ -94,17 +103,26 @@ internal sealed class CatalogRepository(AutoPartsDbContext db) : ICatalogReposit
             .AsSplitQuery()
             .SingleOrDefaultAsync(item => item.Article == article, cancellationToken);
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Быстро проверяет занятость нормализованного артикула без загрузки сущности целиком.
+    /// Проверка даёт понятную ошибку BLL, а уникальный индекс базы данных остаётся окончательной защитой от гонки запросов.
+    /// </summary>
     public Task<bool> ProductArticleExistsAsync(
         string article,
         CancellationToken cancellationToken) =>
         db.Products.AnyAsync(item => item.Article == article, cancellationToken);
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Добавляет новый товар в Change Tracker, не вызывая сохранение самостоятельно.
+    /// Транзакционной границей управляет Unit of Work, поэтому репозиторий не делает частичный commit.
+    /// </summary>
     public async Task AddProductAsync(Product product, CancellationToken cancellationToken) =>
         await db.Products.AddAsync(product, cancellationToken);
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Возвращает категории в стабильном алфавитном порядке без отслеживания EF Core.
+    /// Категории используются как справочник, поэтому отслеживание только увеличило бы память контекста.
+    /// </summary>
     public async Task<IReadOnlyCollection<Category>> GetCategoriesAsync(
         CancellationToken cancellationToken) =>
         await db.Categories
@@ -112,23 +130,35 @@ internal sealed class CatalogRepository(AutoPartsDbContext db) : ICatalogReposit
             .OrderBy(item => item.Name)
             .ToArrayAsync(cancellationToken);
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Находит категорию по внутреннему идентификатору для проверки ссылок при создании и изменении товара.
+    /// Запрос инкапсулирован в репозитории, чтобы сервисы не обращались к DbContext напрямую.
+    /// </summary>
     public Task<Category?> FindCategoryAsync(Guid id, CancellationToken cancellationToken) =>
         db.Categories.SingleOrDefaultAsync(item => item.Id == id, cancellationToken);
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Находит категорию по нормализованному slug, используемому в командах и внешних запросах.
+    /// Нормализация выполняется в BLL, а DAL отвечает только за точный запрос к хранилищу.
+    /// </summary>
     public Task<Category?> FindCategoryBySlugAsync(
         string slug,
         CancellationToken cancellationToken) =>
         db.Categories.SingleOrDefaultAsync(item => item.Slug == slug, cancellationToken);
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Проверяет занятость slug через EXISTS-подобный SQL-запрос без материализации категории.
+    /// Это позволяет BLL заранее вернуть понятную ошибку, сохраняя уникальный индекс как окончательную гарантию.
+    /// </summary>
     public Task<bool> CategorySlugExistsAsync(
         string slug,
         CancellationToken cancellationToken) =>
         db.Categories.AnyAsync(item => item.Slug == slug, cancellationToken);
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Регистрирует новую категорию в контексте, но оставляет момент сохранения Unit of Work.
+    /// Такой контракт позволяет одному бизнес-сценарию атомарно изменить несколько агрегатов.
+    /// </summary>
     public async Task AddCategoryAsync(Category category, CancellationToken cancellationToken) =>
         await db.Categories.AddAsync(category, cancellationToken);
 }
