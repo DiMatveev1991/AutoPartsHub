@@ -64,6 +64,38 @@ public sealed class ProductTests
             [("Toyota", "Camry", 2020, 2019, null)]));
     }
 
+    /// <summary>Проверяет добавление совместимости без удаления существующих правил.</summary>
+    [Fact]
+    public void AddCompatibility_AppendsRule()
+    {
+        var product = CreateProduct();
+
+        ProductRules.AddCompatibility(
+            product,
+            ("Toyota", "Camry", 2015, 2022, "2.5"));
+
+        var compatibility = Assert.Single(product.Compatibilities);
+        Assert.Equal("Toyota", compatibility.Make);
+        Assert.Equal("Camry", compatibility.Model);
+        Assert.Equal(2015, compatibility.YearFrom);
+        Assert.Equal(2022, compatibility.YearTo);
+        Assert.Equal("2.5", compatibility.Engine);
+    }
+
+    /// <summary>Проверяет запрет дублирования одинаковой совместимости.</summary>
+    [Fact]
+    public void AddCompatibility_RejectsDuplicate()
+    {
+        var product = CreateProduct();
+        ProductRules.AddCompatibility(
+            product,
+            ("Toyota", "Camry", 2015, 2022, "2.5"));
+
+        Assert.Throws<DomainException>(() => ProductRules.AddCompatibility(
+            product,
+            ("toyota", "camry", 2015, 2022, "2.5")));
+    }
+
     /// <summary>Создаёт корректный товар через то же BLL-правило, что использует сервис.</summary>
     internal static Product CreateProduct(
         string article = "OIL-01",
