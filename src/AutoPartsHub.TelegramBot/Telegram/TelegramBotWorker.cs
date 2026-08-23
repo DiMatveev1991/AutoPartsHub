@@ -10,10 +10,12 @@ namespace AutoPartsHub.TelegramBot.Telegram;
 /// Запускает получение обновлений Telegram и регистрирует меню команд бота.
 /// </summary>
 /// <param name="options">Настройки Telegram.</param>
+/// <param name="clientProvider">Общий Telegram-клиент с настройками прокси.</param>
 /// <param name="handler">Обработчик входящих обновлений.</param>
 /// <param name="logger">Журнал приложения.</param>
 public sealed class TelegramBotWorker(
     IOptions<TelegramOptions> options,
+    TelegramBotClientProvider clientProvider,
     TelegramUpdateHandler handler,
     ILogger<TelegramBotWorker> logger) : BackgroundService
 {
@@ -22,13 +24,20 @@ public sealed class TelegramBotWorker(
     /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (!options.Value.EnablePolling || string.IsNullOrWhiteSpace(options.Value.BotToken))
+        var client = clientProvider.Client;
+        if (!options.Value.EnablePolling || client is null)
         {
             logger.LogInformation("Telegram polling отключён");
             return;
         }
 
-        var client = new TelegramBotClient(options.Value.BotToken);
+        if (clientProvider.UsesProxy)
+        {
+            logger.LogInformation(
+                "Telegram использует прокси {Proxy}",
+                clientProvider.ProxyDisplayName);
+        }
+
         await client.SetMyCommands(
             TelegramMenu.CreateBotCommands(),
             cancellationToken: stoppingToken);
