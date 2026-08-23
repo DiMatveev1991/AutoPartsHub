@@ -23,6 +23,23 @@ public interface IAdminService
         CompatibilityRequest request,
         CancellationToken cancellationToken);
 
+    /// <summary>Обновляет цену и остаток товара по артикулу.</summary>
+    Task<ProductDto> UpdateProductPriceAndStockAsync(
+        string article,
+        decimal price,
+        int stock,
+        CancellationToken cancellationToken);
+
+    /// <summary>Выполняет мягкое удаление товара по артикулу.</summary>
+    Task DeactivateProductByArticleAsync(
+        string article,
+        CancellationToken cancellationToken);
+
+    /// <summary>Возвращает мягко удалённый товар в каталог по артикулу.</summary>
+    Task<ProductDto> ActivateProductByArticleAsync(
+        string article,
+        CancellationToken cancellationToken);
+
     /// <summary>Обновляет товар.</summary>
     Task<ProductDto> UpdateProductAsync(
         Guid id,
