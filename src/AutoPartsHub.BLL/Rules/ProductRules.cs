@@ -110,6 +110,24 @@ internal static class ProductRules
         product.Compatibilities.Add(compatibility);
     }
 
+    /// <summary>Изменяет цену и складской остаток, сохраняя остальные данные товара.</summary>
+    internal static void UpdatePriceAndStock(
+        Product product,
+        decimal price,
+        int stock,
+        DateTimeOffset now)
+    {
+        if (price <= 0)
+            throw new DomainException("Цена должна быть больше нуля.");
+        if (stock < 0)
+            throw new DomainException("Остаток не может быть отрицательным.");
+
+        product.Price = decimal.Round(price, 2);
+        product.Stock = stock;
+        product.ConcurrencyToken = Guid.NewGuid();
+        product.UpdatedAt = now;
+    }
+
     /// <summary>Резервирует остаток товара для оформляемого заказа.</summary>
     internal static void Reserve(Product product, int quantity)
     {
@@ -126,6 +144,14 @@ internal static class ProductRules
     internal static void Deactivate(Product product, DateTimeOffset now)
     {
         product.IsActive = false;
+        product.ConcurrencyToken = Guid.NewGuid();
+        product.UpdatedAt = now;
+    }
+
+    /// <summary>Возвращает мягко удалённый товар в каталог.</summary>
+    internal static void Activate(Product product, DateTimeOffset now)
+    {
+        product.IsActive = true;
         product.ConcurrencyToken = Guid.NewGuid();
         product.UpdatedAt = now;
     }
