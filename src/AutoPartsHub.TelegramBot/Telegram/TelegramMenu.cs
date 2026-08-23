@@ -71,6 +71,9 @@ internal static class TelegramMenu
         new() { Command = "subscribe", Description = "Подписаться на изменение товара" },
         new() { Command = "notifications", Description = "Показать уведомления" },
         new() { Command = "addcompatibility", Description = "Назначить совместимость товару" },
+        new() { Command = "updateproduct", Description = "Изменить цену и остаток товара" },
+        new() { Command = "deactivateproduct", Description = "Скрыть товар из каталога" },
+        new() { Command = "activateproduct", Description = "Восстановить товар в каталоге" },
         new() { Command = "help", Description = "Показать справку" }
     ];
 
