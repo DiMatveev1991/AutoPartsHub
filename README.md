@@ -342,9 +342,10 @@ erDiagram
 
 ## Настройка секретов
 
-Реальные пароли и Telegram-токен в репозитории не хранятся.
-`appsettings.json` содержит только несекретные переключатели. Строка подключения
-и Telegram-токен передаются переменными окружения непосредственно перед запуском.
+Реальные пароли, Telegram-токен и учётные данные прокси в репозитории не
+хранятся. `appsettings.json` содержит только несекретные переключатели и пустую
+схему прокси. Строка подключения, Telegram-токен и параметры прокси передаются
+переменными окружения непосредственно перед запуском.
 
 ## Быстрый запуск в консоли
 
@@ -388,6 +389,32 @@ export Telegram__EnableConsole='false'
 export Telegram__AdminChatIds__0='YOUR_TELEGRAM_CHAT_ID'
 dotnet run --project src/AutoPartsHub.TelegramBot
 ~~~
+
+Если прямое соединение с `api.telegram.org:443` недоступно, включите HTTP(S)-прокси.
+Один общий Telegram-клиент применяет его к long polling, ответам на команды и
+фоновым уведомлениям. Логин и пароль можно не задавать для прокси без авторизации.
+
+PowerShell:
+
+~~~powershell
+$env:Proxy__UseProxy = "true"
+$env:Proxy__Url = "http://PROXY_HOST:PROXY_PORT"
+$env:Proxy__Username = "PROXY_USERNAME"
+$env:Proxy__Password = "PROXY_PASSWORD"
+~~~
+
+Bash:
+
+~~~bash
+export Proxy__UseProxy='true'
+export Proxy__Url='http://PROXY_HOST:PROXY_PORT'
+export Proxy__Username='PROXY_USERNAME'
+export Proxy__Password='PROXY_PASSWORD'
+~~~
+
+При старте журнал показывает только адрес прокси без логина и пароля. Для прямого
+подключения задайте `Proxy__UseProxy=false`; секретные значения в
+`appsettings.json` не записывайте.
 
 Пользователь из `AdminChatIds` получает роль Admin при первой команде. Если id
 добавили позже, роль обновится при следующем сообщении.
