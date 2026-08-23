@@ -21,6 +21,13 @@ public static class BotRegistrator
         // Options отделяет классы Telegram-слоя от строковых ключей IConfiguration.
         services.Configure<TelegramOptions>(
             configuration.GetSection(TelegramOptions.SectionName));
+        services.Configure<ProxyOptions>(
+            configuration.GetSection(ProxyOptions.SectionName));
+
+        // Один клиент и один HttpClient используются для polling, ответов и
+        // уведомлений. Так прокси применяется ко всему Telegram-трафику, а
+        // соединения переиспользуются без socket exhaustion.
+        services.AddSingleton<TelegramBotClientProvider>();
 
         // Обработчик использует Scoped бизнес-сервисы и создаётся на одну команду.
         // Он общий для Telegram и консоли, поэтому разбор команд не дублируется.
