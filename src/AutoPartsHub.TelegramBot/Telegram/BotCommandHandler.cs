@@ -69,6 +69,7 @@ public sealed class BotCommandHandler(
                 "/notifications" => await NotificationsAsync(user.Id, cancellationToken),
                 "/addcategory" => await AddCategoryAsync(user, argument, cancellationToken),
                 "/addproduct" => await AddProductAsync(user, argument, cancellationToken),
+                "/addcompatibility" => await AddCompatibilityAsync(user, argument, cancellationToken),
                 "/adminorders" => await AdminOrdersAsync(user, cancellationToken),
                 "/setstatus" => await SetStatusAsync(user, argument, cancellationToken),
                 _ => "Неизвестная команда. Используйте /help."
@@ -316,6 +317,34 @@ public sealed class BotCommandHandler(
     }
 
     /// <summary>
+    /// Добавляет товару совместимость с автомобилем после проверки роли администратора.
+    /// </summary>
+    private async Task<string> AddCompatibilityAsync(
+        UserDto user,
+        string argument,
+        CancellationToken cancellationToken)
+    {
+        RequireAdmin(user);
+        var values = Split(
+            argument,
+            5,
+            6,
+            "/addcompatibility АРТИКУЛ|Марка|Модель|ГОД_ОТ|ГОД_ДО|ДВИГАТЕЛЬ");
+
+        var product = await admin.AddCompatibilityAsync(
+            values[0],
+            new CompatibilityRequest(
+                values[1],
+                values[2],
+                ParseInt(values[3], "Начальный год"),
+                ParseInt(values[4], "Конечный год"),
+                values.Length == 6 ? values[5] : null),
+            cancellationToken);
+        return $"Совместимость для {product.Article} добавлена: " +
+            $"{values[1]} {values[2]}, {values[3]}–{values[4]}.";
+    }
+
+    /// <summary>
     /// Возвращает администратору последние заказы.
     /// </summary>
     private async Task<string> AdminOrdersAsync(
@@ -483,5 +512,6 @@ public sealed class BotCommandHandler(
         "/status <номер> — статус заказа\n" +
         "/subscribe <артикул> [цена] — подписка на наличие или снижение цены\n" +
         "/notifications — уведомления\n" +
-        "Администратор: /addcategory, /addproduct, /adminorders, /setstatus.";
+        "Администратор: /addcategory, /addproduct, /addcompatibility, " +
+        "/adminorders, /setstatus.";
 }
