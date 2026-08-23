@@ -70,6 +70,9 @@ public sealed class BotCommandHandler(
                 "/addcategory" => await AddCategoryAsync(user, argument, cancellationToken),
                 "/addproduct" => await AddProductAsync(user, argument, cancellationToken),
                 "/addcompatibility" => await AddCompatibilityAsync(user, argument, cancellationToken),
+                "/updateproduct" => await UpdateProductAsync(user, argument, cancellationToken),
+                "/deactivateproduct" => await DeactivateProductAsync(user, argument, cancellationToken),
+                "/activateproduct" => await ActivateProductAsync(user, argument, cancellationToken),
                 "/adminorders" => await AdminOrdersAsync(user, cancellationToken),
                 "/setstatus" => await SetStatusAsync(user, argument, cancellationToken),
                 _ => "Неизвестная команда. Используйте /help."
@@ -345,6 +348,56 @@ public sealed class BotCommandHandler(
     }
 
     /// <summary>
+    /// Обновляет цену и остаток товара после проверки роли администратора.
+    /// </summary>
+    private async Task<string> UpdateProductAsync(
+        UserDto user,
+        string argument,
+        CancellationToken cancellationToken)
+    {
+        RequireAdmin(user);
+        var values = Split(
+            argument,
+            3,
+            3,
+            "/updateproduct АРТИКУЛ|ЦЕНА|ОСТАТОК");
+        var product = await admin.UpdateProductPriceAndStockAsync(
+            values[0],
+            ParseDecimal(values[1], "Цена"),
+            ParseInt(values[2], "Остаток"),
+            cancellationToken);
+        return $"Товар {product.Article} обновлён: цена {product.Price:F2} ₽, остаток {product.Stock}.";
+    }
+
+    /// <summary>
+    /// Выполняет мягкое удаление товара после проверки роли администратора.
+    /// </summary>
+    private async Task<string> DeactivateProductAsync(
+        UserDto user,
+        string argument,
+        CancellationToken cancellationToken)
+    {
+        RequireAdmin(user);
+        var article = Require(argument, "/deactivateproduct АРТИКУЛ");
+        await admin.DeactivateProductByArticleAsync(article, cancellationToken);
+        return $"Товар {article.Trim().ToUpperInvariant()} скрыт из каталога (мягкое удаление).";
+    }
+
+    /// <summary>
+    /// Возвращает мягко удалённый товар в каталог после проверки роли администратора.
+    /// </summary>
+    private async Task<string> ActivateProductAsync(
+        UserDto user,
+        string argument,
+        CancellationToken cancellationToken)
+    {
+        RequireAdmin(user);
+        var article = Require(argument, "/activateproduct АРТИКУЛ");
+        var product = await admin.ActivateProductByArticleAsync(article, cancellationToken);
+        return $"Товар {product.Article} восстановлен и снова доступен в каталоге.";
+    }
+
+    /// <summary>
     /// Возвращает администратору последние заказы.
     /// </summary>
     private async Task<string> AdminOrdersAsync(
@@ -513,5 +566,5 @@ public sealed class BotCommandHandler(
         "/subscribe <артикул> [цена] — подписка на наличие или снижение цены\n" +
         "/notifications — уведомления\n" +
         "Администратор: /addcategory, /addproduct, /addcompatibility, " +
-        "/adminorders, /setstatus.";
+        "/updateproduct, /deactivateproduct, /activateproduct, /adminorders, /setstatus.";
 }
