@@ -66,6 +66,26 @@ public sealed class AdminService(
     }
 
     /// <summary>
+    /// Добавляет существующему товару проверенное правило совместимости.
+    /// </summary>
+    public async Task<ProductDto> AddCompatibilityAsync(
+        string article,
+        CompatibilityRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(article))
+            throw new DomainException("Артикул обязателен.");
+
+        var product = await catalog.FindProductByArticleAsync(
+            article.Trim().ToUpperInvariant(),
+            cancellationToken) ?? throw new NotFoundException("Товар не найден.");
+
+        ProductRules.AddCompatibility(product, ToValues(request));
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        return product.ToDto();
+    }
+
+    /// <summary>
     /// Обновляет характеристики и совместимость существующего товара.
     /// </summary>
     public async Task<ProductDto> UpdateProductAsync(
