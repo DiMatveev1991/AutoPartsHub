@@ -70,6 +70,7 @@ internal static class TelegramMenu
         new() { Command = "status", Description = "Проверить статус заказа" },
         new() { Command = "subscribe", Description = "Подписаться на изменение товара" },
         new() { Command = "notifications", Description = "Показать уведомления" },
+        new() { Command = "addcompatibility", Description = "Назначить совместимость товару" },
         new() { Command = "help", Description = "Показать справку" }
     ];
 
