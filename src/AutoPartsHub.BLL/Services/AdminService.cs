@@ -86,6 +86,46 @@ public sealed class AdminService(
     }
 
     /// <summary>
+    /// Изменяет цену и остаток товара, найденного по артикулу.
+    /// </summary>
+    public async Task<ProductDto> UpdateProductPriceAndStockAsync(
+        string article,
+        decimal price,
+        int stock,
+        CancellationToken cancellationToken)
+    {
+        var product = await RequireProductByArticleAsync(article, cancellationToken);
+        ProductRules.UpdatePriceAndStock(product, price, stock, clock.UtcNow);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        return product.ToDto();
+    }
+
+    /// <summary>
+    /// Выполняет мягкое удаление товара, найденного по артикулу.
+    /// </summary>
+    public async Task DeactivateProductByArticleAsync(
+        string article,
+        CancellationToken cancellationToken)
+    {
+        var product = await RequireProductByArticleAsync(article, cancellationToken);
+        ProductRules.Deactivate(product, clock.UtcNow);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Возвращает мягко удалённый товар в каталог.
+    /// </summary>
+    public async Task<ProductDto> ActivateProductByArticleAsync(
+        string article,
+        CancellationToken cancellationToken)
+    {
+        var product = await RequireProductByArticleAsync(article, cancellationToken);
+        ProductRules.Activate(product, clock.UtcNow);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        return product.ToDto();
+    }
+
+    /// <summary>
     /// Обновляет характеристики и совместимость существующего товара.
     /// </summary>
     public async Task<ProductDto> UpdateProductAsync(
@@ -154,6 +194,21 @@ public sealed class AdminService(
             cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return order.ToDto();
+    }
+
+    /// <summary>
+    /// Находит товар по обязательному нормализованному артикулу.
+    /// </summary>
+    private async Task<Product> RequireProductByArticleAsync(
+        string article,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(article))
+            throw new DomainException("Артикул обязателен.");
+
+        return await catalog.FindProductByArticleAsync(
+            article.Trim().ToUpperInvariant(),
+            cancellationToken) ?? throw new NotFoundException("Товар не найден.");
     }
 
     /// <summary>
