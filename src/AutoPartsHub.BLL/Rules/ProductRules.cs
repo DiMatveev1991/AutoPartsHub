@@ -82,6 +82,34 @@ internal static class ProductRules
             product.Compatibilities.Add(compatibility);
     }
 
+    /// <summary>Добавляет одно правило совместимости, не заменяя уже существующие.</summary>
+    internal static void AddCompatibility(
+        Product product,
+        (string Make, string Model, int YearFrom, int YearTo, string? Engine) item)
+    {
+        var compatibility = CreateCompatibility(
+            product.Id,
+            item.Make,
+            item.Model,
+            item.YearFrom,
+            item.YearTo,
+            item.Engine);
+
+        var duplicateExists = product.Compatibilities.Any(existing =>
+            string.Equals(existing.Make, compatibility.Make, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(existing.Model, compatibility.Model, StringComparison.OrdinalIgnoreCase) &&
+            existing.YearFrom == compatibility.YearFrom &&
+            existing.YearTo == compatibility.YearTo &&
+            string.Equals(
+                existing.Engine ?? string.Empty,
+                compatibility.Engine ?? string.Empty,
+                StringComparison.OrdinalIgnoreCase));
+        if (duplicateExists)
+            throw new DomainException("Такая совместимость уже добавлена товару.");
+
+        product.Compatibilities.Add(compatibility);
+    }
+
     /// <summary>Резервирует остаток товара для оформляемого заказа.</summary>
     internal static void Reserve(Product product, int quantity)
     {
