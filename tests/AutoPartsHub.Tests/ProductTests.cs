@@ -96,6 +96,33 @@ public sealed class ProductTests
             ("toyota", "camry", 2015, 2022, "2.5")));
     }
 
+    /// <summary>Проверяет изменение только цены и остатка товара.</summary>
+    [Fact]
+    public void UpdatePriceAndStock_ChangesInventoryData()
+    {
+        var product = CreateProduct();
+
+        ProductRules.UpdatePriceAndStock(product, 399.99m, 7, Now.AddMinutes(1));
+
+        Assert.Equal(399.99m, product.Price);
+        Assert.Equal(7, product.Stock);
+        Assert.Equal(Now.AddMinutes(1), product.UpdatedAt);
+    }
+
+    /// <summary>Проверяет мягкое удаление и последующее восстановление товара.</summary>
+    [Fact]
+    public void DeactivateAndActivate_ChangeVisibility()
+    {
+        var product = CreateProduct();
+
+        ProductRules.Deactivate(product, Now.AddMinutes(1));
+        Assert.False(product.IsActive);
+
+        ProductRules.Activate(product, Now.AddMinutes(2));
+        Assert.True(product.IsActive);
+        Assert.Equal(Now.AddMinutes(2), product.UpdatedAt);
+    }
+
     /// <summary>Создаёт корректный товар через то же BLL-правило, что использует сервис.</summary>
     internal static Product CreateProduct(
         string article = "OIL-01",
