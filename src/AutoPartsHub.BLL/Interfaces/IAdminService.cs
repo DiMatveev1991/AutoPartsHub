@@ -17,6 +17,12 @@ public interface IAdminService
         CreateProductRequest request,
         CancellationToken cancellationToken);
 
+    /// <summary>Добавляет товару правило совместимости с автомобилем.</summary>
+    Task<ProductDto> AddCompatibilityAsync(
+        string article,
+        CompatibilityRequest request,
+        CancellationToken cancellationToken);
+
     /// <summary>Обновляет товар.</summary>
     Task<ProductDto> UpdateProductAsync(
         Guid id,
