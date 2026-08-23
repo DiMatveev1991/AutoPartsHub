@@ -1,7 +1,6 @@
 using AutoPartsHub.BLL.Interfaces;
 using AutoPartsHub.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Telegram.Bot;
 
 namespace AutoPartsHub.TelegramBot.Telegram;
@@ -9,10 +8,10 @@ namespace AutoPartsHub.TelegramBot.Telegram;
 /// <summary>
 /// Отправляет уведомления через Telegram или записывает их в журнал без токена.
 /// </summary>
-/// <param name="options">Настройки Telegram.</param>
+/// <param name="clientProvider">Общий Telegram-клиент с настройками прокси.</param>
 /// <param name="logger">Журнал приложения.</param>
 public sealed class TelegramNotificationSender(
-    IOptions<TelegramOptions> options,
+    TelegramBotClientProvider clientProvider,
     ILogger<TelegramNotificationSender> logger) : INotificationSender
 {
     /// <summary>
@@ -23,7 +22,8 @@ public sealed class TelegramNotificationSender(
         Notification notification,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(options.Value.BotToken))
+        var client = clientProvider.Client;
+        if (client is null)
         {
             // В демонстрационном режиме уведомления видны в журнале без реального Telegram API.
             logger.LogInformation(
@@ -33,7 +33,6 @@ public sealed class TelegramNotificationSender(
             return;
         }
 
-        var client = new TelegramBotClient(options.Value.BotToken);
         await client.SendMessage(
             user.TelegramChatId,
             notification.Text,
