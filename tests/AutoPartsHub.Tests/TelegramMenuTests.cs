@@ -33,6 +33,15 @@ public sealed class TelegramMenuTests
         Assert.Equal(command, TelegramMenu.ResolveCommand(command));
     }
 
+    /// <summary>Проверяет регистрацию административной команды совместимости в меню Telegram.</summary>
+    [Fact]
+    public void CreateBotCommands_ContainsAddCompatibility()
+    {
+        var commands = TelegramMenu.CreateBotCommands();
+
+        Assert.Contains(commands, command => command.Command == "addcompatibility");
+    }
+
     /// <summary>
     /// Проверяет состав и настройки постоянной клавиатуры, не отправляя запрос в Telegram API.
     /// </summary>
